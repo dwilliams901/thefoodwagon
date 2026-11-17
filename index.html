@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>The Food Wagon — Menu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f4e6c4;
+    --parchment:#fdf6e3;
+    --brown:    #2c1a0e;
+    --saddle:   #7a3b1e;
+    --tan:      #c8860a;
+    --gold:     #d4960c;
+    --cream:    #fdf6e3;
+    --red:      #7d1f1f;
+    --border:   rgba(122,59,30,0.25);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--brown);
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--brown);
+    padding: 20px 20px 22px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent 0, transparent 3px,
+      rgba(255,255,255,.025) 3px, rgba(255,255,255,.025) 4px
+    );
+    pointer-events: none;
+  }
+  .header::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+  }
+
+  .header-logo {
+    display: block;
+    width: 220px;
+    height: auto;
+    margin: 0 auto 10px;
+    border-radius: 6px;
+    position: relative;
+    box-shadow: 0 3px 14px rgba(0,0,0,.45);
+  }
+
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--cream);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 10px 0 2px;
+    position: relative;
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  .header-stars {
+    color: var(--gold);
+    font-size: 0.75rem;
+    letter-spacing: 10px;
+    margin: 6px 0 14px;
+    display: block;
+    position: relative;
+    opacity: .9;
+  }
+
+  .header-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gold);
+    color: var(--brown);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 1.5px;
+    padding: 7px 20px;
+    border-radius: 24px;
+    text-decoration: none;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0,0,0,.3);
+    transition: transform .1s;
+  }
+  .header-phone:active { transform: scale(.97); }
+
+  .header-fb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1877f2;
+    color: #fff;
+    font-weight: 700;
+    font-size: .88rem;
+    letter-spacing: .8px;
+    padding: 6px 18px;
+    border-radius: 24px;
+    text-decoration: none;
+    margin-top: 10px;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0,0,0,.3);
+    transition: transform .1s;
+  }
+  .header-fb:active { transform: scale(.97); }
+
+  /* ── ALL-DAY BREAKFAST BANNER ── */
+  .adb-banner {
+    background: var(--red);
+    color: var(--cream);
+    text-align: center;
+    padding: 11px 12px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+  }
+
+  /* ── STICKY WRAP ── */
+  .sticky-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  /* ── ANCHOR NAV GRID ── */
+  .nav-grid {
+    background: var(--brown);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-bottom: 3px solid var(--gold);
+    padding: 7px 8px 6px;
+  }
+
+  .nav-link {
+    flex: 0 0 calc(33.33% - 6px);
+    text-align: center;
+    color: rgba(212,196,170,.7);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: color .15s, background .15s;
+    font-family: 'Source Sans 3', sans-serif;
+    margin: 2px 3px;
+  }
+  .nav-link:hover,
+  .nav-link:focus { color: var(--cream); background: rgba(255,255,255,.1); outline: none; }
+  .nav-link:active { background: rgba(255,255,255,.18); }
+  /* Last 2 links fill the bottom row evenly */
+  .nav-link:nth-child(4),
+  .nav-link:nth-child(5) { flex: 0 0 calc(50% - 6px); }
+
+  /* ── CONTENT ── */
+  .content { padding: 0 13px 36px; }
+
+  /* scroll-margin-top — generous fallback; JS overrides once image loads */
+  section { scroll-margin-top: 480px; }
+
+  /* ── CATEGORY DIVIDER ── */
+  .cat-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 0 4px;
+  }
+  .cat-divider-line { flex: 1; height: 2px; background: var(--saddle); opacity: .35; }
+  .cat-divider h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--brown);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    white-space: nowrap;
+  }
+
+  /* ── SECTION HEADER ── */
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 22px 0 11px;
+  }
+  .sec-line { flex: 1; height: 1px; background: rgba(122,59,30,.3); }
+  .sec-head h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--saddle);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  /* ── MENU ITEM CARD (flat, no accordion) ── */
+  .item {
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(44,26,14,.08);
+  }
+
+  /* Item title row */
+  .item-head {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px 10px;
+    gap: 8px;
+  }
+  .item-name {
+    flex: 1;
+    font-weight: 700;
+    font-size: .97rem;
+    color: var(--brown);
+    line-height: 1.35;
+  }
+  .item-sub {
+    font-size: .78rem;
+    font-weight: 400;
+    color: #9a6030;
+    margin-top: 2px;
+    display: block;
+  }
+  .item-price {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--tan);
+    white-space: nowrap;
+  }
+
+  /* Options always visible */
+  .item-body {
+    padding: 0 14px 12px;
+    border-top: 1px dashed rgba(122,59,30,.18);
+  }
+
+  /* Option rows */
+  .opt {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px dashed rgba(122,59,30,.12);
+  }
+  .opt:last-child { border-bottom: none; padding-bottom: 0; }
+  .opt-label { font-size: .9rem; color: var(--saddle); padding-left: 4px; }
+  .opt-price  { font-size: .9rem; font-weight: 700; color: var(--brown); }
+
+  .opt-note {
+    display: block;
+    font-size: .8rem;
+    color: var(--tan);
+    font-style: italic;
+    padding: 7px 4px 2px;
+  }
+
+  /* ── FLAT ITEM (single price, no options) ── */
+  .flat {
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(44,26,14,.06);
+  }
+  .flat-name { font-weight: 700; font-size: .95rem; }
+  .flat-price {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--tan);
+    white-space: nowrap;
+  }
+
+  /* ── CHIP BOX ── */
+  .chip-box {
+    background: var(--parchment);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 13px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(44,26,14,.06);
+  }
+  .chip-label {
+    font-size: .74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--saddle);
+    margin-bottom: 9px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    background: var(--brown);
+    color: var(--cream);
+    font-size: .78rem;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 20px;
+  }
+  .chip.o {
+    background: transparent;
+    color: var(--saddle);
+    border: 1px solid rgba(122,59,30,.4);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--brown);
+    color: rgba(212,196,170,.8);
+    text-align: center;
+    padding: 28px 20px;
+    border-top: 4px solid var(--gold);
+  }
+  .foot-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--cream);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .foot-phone {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+  }
+  .foot-note { font-size: .8rem; margin-top: 10px; opacity: .65; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="sticky-wrap">
+<header class="header">
+  <img class="header-logo" src="https://i.ibb.co/Cp6scK3J/633076571-122103650391246767-1356875306828367397-n.jpg" alt="The Food Wagon logo">
+  <div class="header-title">The Food Wagon</div>
+  <span class="header-stars">★ &nbsp; ★ &nbsp; ★</span>
+  <a href="tel:9017645256" class="header-phone">📞 (901) 764-5256</a>
+  <a href="https://www.facebook.com/profile.php?id=61587403011762" target="_blank" rel="noopener" class="header-fb">📘 Follow on Facebook</a>
+</header>
+
+<div class="adb-banner">🍳 &nbsp; BREAKFAST SERVED ALL DAY &nbsp; 🍳</div>
+
+<!-- ══ ANCHOR NAV GRID ══ -->
+<nav class="nav-grid">
+  <a class="nav-link" href="#breakfast">🥞 Breakfast</a>
+  <a class="nav-link" href="#burgers">🍔 Burgers</a>
+  <a class="nav-link" href="#chicken">🍗 Chicken</a>
+  <a class="nav-link" href="#more">🌮 More</a>
+  <a class="nav-link" href="#extras">🥤 Extras</a>
+</nav>
+</div>
+
+<main class="content">
+
+  <!-- ════ BREAKFAST ════ -->
+  <section id="breakfast">
+    <div class="cat-divider"><div class="cat-divider-line"></div><h1>Breakfast</h1><div class="cat-divider-line"></div></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Biscuits</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Biscuits &amp; Gravy</div>
+        <div class="item-price">$4.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Add Sausage</span><span class="opt-price">+$1.99</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Chicken Biscuit</div>
+        <div class="item-price">$5.49</div>
+      </div>
+      <div class="item-body">
+        <span class="opt-note">Golden fried chicken on a fresh-baked biscuit</span>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Smoked Sausage Biscuit</div>
+        <div class="item-price">from $5.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Smoked Sausage Biscuit</span><span class="opt-price">$5.49</span></div>
+        <div class="opt"><span class="opt-label">W/ Egg &amp; Cheese</span><span class="opt-price">$6.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$10.49</span></div>
+        <div class="opt"><span class="opt-label">Combo W/ Egg &amp; Cheese</span><span class="opt-price">$11.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Sausage Biscuit</div>
+        <div class="item-price">$4.49</div>
+      </div>
+      <div class="item-body">
+        <span class="opt-note">Classic sausage on a warm homestyle biscuit</span>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Bacon Biscuit</div>
+        <div class="item-price">from $4.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Bacon Biscuit</span><span class="opt-price">$4.49</span></div>
+        <div class="opt"><span class="opt-label">W/ Egg &amp; Cheese</span><span class="opt-price">$5.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$9.49</span></div>
+        <div class="opt"><span class="opt-label">Combo W/ Egg &amp; Cheese</span><span class="opt-price">$10.49</span></div>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Plates &amp; More</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">
+          Breakfast Burrito
+          <span class="item-sub">Sausage or Bacon, Egg &amp; Cheese</span>
+        </div>
+        <div class="item-price">from $5.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Burrito</span><span class="opt-price">$5.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$11.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">
+          Breakfast Plate
+          <span class="item-sub">Scrambled eggs, tots, choice of meat &amp; biscuit</span>
+        </div>
+        <div class="item-price">from $8.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Breakfast Plate</span><span class="opt-price">$8.99</span></div>
+        <div class="opt"><span class="opt-label">With Orange Juice</span><span class="opt-price">$10.99</span></div>
+        <span class="opt-note">★ Add gravy to the biscuit at no extra charge</span>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Meat Choices</h2><div class="sec-line"></div></div>
+    <div class="chip-box">
+      <div class="chips">
+        <span class="chip">Bacon</span>
+        <span class="chip">Sausage</span>
+        <span class="chip">Chicken</span>
+        <span class="chip">Smoked Sausage</span>
+        <span class="chip o">Fried Bologna +$0.99</span>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Breakfast Sides</h2><div class="sec-line"></div></div>
+    <div class="flat"><span class="flat-name">Extra Biscuit</span><span class="flat-price">$0.99</span></div>
+    <div class="flat"><span class="flat-name">Side of Eggs</span><span class="flat-price">$2.99</span></div>
+    <div class="flat"><span class="flat-name">Side of Bacon (3 pieces)</span><span class="flat-price">$2.99</span></div>
+    <div class="flat"><span class="flat-name">Side of Sausage (2 pieces)</span><span class="flat-price">$2.99</span></div>
+    <div class="flat"><span class="flat-name">Side of Gravy</span><span class="flat-price">$1.49</span></div>
+  </section>
+
+  <!-- ════ BURGERS ════ -->
+  <section id="burgers">
+    <div class="cat-divider"><div class="cat-divider-line"></div><h1>Burgers</h1><div class="cat-divider-line"></div></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Burgers</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Hamburger</div>
+        <div class="item-price">from $7.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Hamburger</span><span class="opt-price">$7.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$13.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Cheeseburger</div>
+        <div class="item-price">from $8.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Cheeseburger</span><span class="opt-price">$8.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$14.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Bacon Cheeseburger</div>
+        <div class="item-price">from $9.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Bacon Cheeseburger</span><span class="opt-price">$9.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$14.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Chicken or Steak Philly</div>
+        <div class="item-price">from $8.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Philly Sandwich</span><span class="opt-price">$8.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$14.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Fried Bologna</div>
+        <div class="item-price">from $4.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Fried Bologna</span><span class="opt-price">$4.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$10.99</span></div>
+      </div>
+    </div>
+
+    <div class="chip-box" style="margin-top:14px;">
+      <div class="chip-label">Cheese Options</div>
+      <div class="chips">
+        <span class="chip o">American</span>
+        <span class="chip o">Pepper Jack</span>
+        <span class="chip o">Swiss</span>
+        <span class="chip o">Provolone</span>
+        <span class="chip o">Cheddar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ CHICKEN ════ -->
+  <section id="chicken">
+    <div class="cat-divider"><div class="cat-divider-line"></div><h1>Chicken</h1><div class="cat-divider-line"></div></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Chicken</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">(3) Chicken Strips</div>
+        <div class="item-price">from $6.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">3 Chicken Strips</span><span class="opt-price">$6.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$12.99</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">
+          Chicken Wrap
+          <span class="item-sub">Grilled or Fried</span>
+        </div>
+        <div class="item-price">from $8.49</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Chicken Wrap</span><span class="opt-price">$8.49</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$14.49</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">
+          Chicken Sandwich
+          <span class="item-sub">Grilled or Fried</span>
+        </div>
+        <div class="item-price">from $5.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Chicken Sandwich</span><span class="opt-price">$5.99</span></div>
+        <div class="opt"><span class="opt-label">W/ Cheese</span><span class="opt-price">$6.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$11.99</span></div>
+        <div class="opt"><span class="opt-label">Combo W/ Cheese</span><span class="opt-price">$12.99</span></div>
+      </div>
+    </div>
+
+    <div class="chip-box" style="margin-top:14px;">
+      <div class="chip-label">Wrap Shell Options</div>
+      <div class="chips">
+        <span class="chip o">Tomato Basil</span>
+        <span class="chip o">Spinach &amp; Herb</span>
+        <span class="chip o">Garlic &amp; Herb</span>
+        <span class="chip o">Original</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ MORE ════ -->
+  <section id="more">
+    <div class="cat-divider"><div class="cat-divider-line"></div><h1>More</h1><div class="cat-divider-line"></div></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Nachos</h2><div class="sec-line"></div></div>
+    <div class="flat"><span class="flat-name">Nachos W/ Cheese</span><span class="flat-price">$5.99</span></div>
+    <div class="flat"><span class="flat-name">Nachos W/ Chili &amp; Cheese</span><span class="flat-price">$7.99</span></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Hot Dogs</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Hot Dog <span class="item-sub">All Beef</span></div>
+        <div class="item-price">from $5.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Hot Dog</span><span class="opt-price">$5.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$11.99</span></div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Smoked Sausage Dog</div>
+        <div class="item-price">from $5.99</div>
+      </div>
+      <div class="item-body">
+        <div class="opt"><span class="opt-label">Smoked Sausage</span><span class="opt-price">$5.99</span></div>
+        <div class="opt"><span class="opt-label">Combo</span><span class="opt-price">$11.99</span></div>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Salads</h2><div class="sec-line"></div></div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">Garden Salad</div>
+        <div class="item-price">$8.49</div>
+      </div>
+      <div class="item-body">
+        <div class="chip-label" style="margin-top:4px;">Dressings</div>
+        <div class="chips" style="margin-top:7px;">
+          <span class="chip o">Honey Mustard</span>
+          <span class="chip o">Ranch</span>
+          <span class="chip o">1000 Island</span>
+          <span class="chip o">Creamy Italian</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="item-head">
+        <div class="item-name">
+          Chicken Salad
+          <span class="item-sub">Grilled or Fried</span>
+        </div>
+        <div class="item-price">$13.49</div>
+      </div>
+      <div class="item-body">
+        <div class="chip-label" style="margin-top:4px;">Dressings</div>
+        <div class="chips" style="margin-top:7px;">
+          <span class="chip o">Honey Mustard</span>
+          <span class="chip o">Ranch</span>
+          <span class="chip o">1000 Island</span>
+          <span class="chip o">Creamy Italian</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Sides</h2><div class="sec-line"></div></div>
+    <div class="flat"><span class="flat-name">Fries / Tots / Onion Rings</span><span class="flat-price">$3.99</span></div>
+    <div class="flat"><span class="flat-name">Add Chili or Nacho Cheese</span><span class="flat-price">$0.99 ea</span></div>
+    <div class="flat"><span class="flat-name">Extra Cheese Slice</span><span class="flat-price">$0.99</span></div>
+
+    <div class="chip-box" style="margin-top:4px;">
+      <div class="chip-label">Cheese Options</div>
+      <div class="chips">
+        <span class="chip o">American</span>
+        <span class="chip o">Pepper Jack</span>
+        <span class="chip o">Swiss</span>
+        <span class="chip o">Provolone</span>
+        <span class="chip o">Cheddar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════ EXTRAS ════ -->
+  <section id="extras">
+    <div class="cat-divider"><div class="cat-divider-line"></div><h1>Extras</h1><div class="cat-divider-line"></div></div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Drinks</h2><div class="sec-line"></div></div>
+    <div class="chip-box">
+      <div class="chips">
+        <span class="chip">Coke</span>
+        <span class="chip">Diet Coke</span>
+        <span class="chip">Coke Zero</span>
+        <span class="chip">Dr. Pepper</span>
+        <span class="chip">Diet Dr. Pepper</span>
+        <span class="chip">Sprite</span>
+        <span class="chip">Mt. Dew</span>
+        <span class="chip">Lemonade</span>
+        <span class="chip">Arnold Palmer</span>
+        <span class="chip">Bottled Water</span>
+        <span class="chip">Gatorade — Red</span>
+        <span class="chip">Gatorade — Yellow</span>
+        <span class="chip">Gatorade — Blue</span>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Sauces</h2><div class="sec-line"></div></div>
+    <div class="chip-box">
+      <div class="chips">
+        <span class="chip o">Bacon Ranch</span>
+        <span class="chip o">Hot Honey Ranch</span>
+        <span class="chip o">Raspberry Chipotle</span>
+        <span class="chip o">Teriyaki</span>
+        <span class="chip o">Ranch</span>
+        <span class="chip o">Honey Mustard</span>
+        <span class="chip o">Buffalo</span>
+        <span class="chip o">BBQ</span>
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-line"></div><h2>Wrap Shells</h2><div class="sec-line"></div></div>
+    <div class="chip-box">
+      <div class="chips">
+        <span class="chip o">Tomato Basil</span>
+        <span class="chip o">Spinach &amp; Herb</span>
+        <span class="chip o">Garlic &amp; Herb</span>
+        <span class="chip o">Original</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-logo">The Food Wagon</div>
+  <div class="foot-phone">📞 (901) 764-5256</div>
+  <div class="foot-note"><a href="https://www.facebook.com/profile.php?id=61587403011762" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">Follow us on Facebook</a> &nbsp;·&nbsp; Breakfast Served All Day</div>
+</footer>
+
+<script>
+  function setScrollMargin() {
+    var h = document.querySelector('.sticky-wrap').offsetHeight;
+    document.querySelectorAll('section').forEach(function(s) {
+      s.style.scrollMarginTop = h + 'px';
+    });
+  }
+  // ResizeObserver fires when the sticky block changes height (e.g. image loads)
+  if (window.ResizeObserver) {
+    new ResizeObserver(setScrollMargin).observe(document.querySelector('.sticky-wrap'));
+  }
+  // Fallback for older browsers
+  window.addEventListener('load', setScrollMargin);
+  window.addEventListener('resize', setScrollMargin);
+</script>
+</body>
+</html>
