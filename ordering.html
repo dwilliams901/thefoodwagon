@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Order Station — The Food Wagon</title>
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface-2: #21253a; --surface-3: #2a2f45;
+  --border: #2e3347; --border-light: #3a4060;
+  --text: #e8eaf0; --text-muted: #8891aa;
+  --primary: #e87d2b; --primary-light: #f0a060;
+  --success: #3bb56a; --danger: #e84f3b; --warning: #f0b429;
+  --radius: 10px; --radius-lg: 14px; --shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── LOADING ── */
+#loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:999}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── HEADER ── */
+.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-brand .logo{font-size:24px}
+.header-brand h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.header-brand p{font-size:11px;color:var(--text-muted);margin-top:1px}
+.cart-pill{background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;display:none;border:none;transition:opacity .15s}
+.cart-pill:active{opacity:.8}
+
+/* ── LAYOUT ── */
+.main-wrap{display:grid;grid-template-columns:1fr 350px;min-height:calc(100vh - 57px)}
+@media(max-width:680px){.main-wrap{grid-template-columns:1fr}}
+
+/* ── MENU PANEL ── */
+.menu-panel{padding:20px;border-right:1px solid var(--border)}
+.panel-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
+.menu-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-lg);padding:16px 14px;transition:border-color .15s,background .15s;position:relative;user-select:none}
+.menu-card.has-qty{border-color:var(--primary);background:var(--surface-2)}
+.menu-card-name{font-size:15px;font-weight:600;line-height:1.3;margin-bottom:4px}
+.menu-card-price{font-size:14px;font-weight:700;color:var(--primary-light);margin-bottom:14px}
+.menu-card-price.no-price{color:var(--text-muted)}
+.qty-controls{display:flex;align-items:center;gap:10px}
+.qty-btn{width:42px;height:42px;border:none;border-radius:50%;background:var(--surface-3);color:var(--text);font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;transition:background .1s;flex-shrink:0}
+.qty-btn:active{background:var(--primary)}
+.qty-num{font-size:20px;font-weight:700;min-width:28px;text-align:center}
+.qty-badge{position:absolute;top:-7px;right:-7px;background:var(--primary);color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.no-menu{text-align:center;padding:48px 20px;color:var(--text-muted);grid-column:1/-1}
+.no-menu h3{color:var(--text);margin-bottom:6px;font-size:16px}
+
+/* ── CART PANEL ── */
+.cart-panel{background:var(--surface);display:flex;flex-direction:column;padding:20px;min-height:calc(100vh - 57px)}
+@media(max-width:680px){
+  .cart-panel{display:none;position:fixed;inset:0;z-index:100;min-height:100vh;overflow-y:auto}
+  .cart-panel.open{display:flex}
+}
+.cart-items{flex:1;overflow-y:auto;margin-bottom:16px}
+.cart-empty{text-align:center;padding:36px 16px;color:var(--text-muted);font-size:13px}
+.cart-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.cart-item-name{flex:1;font-size:14px;font-weight:500}
+.cart-item-qty{font-size:12px;color:var(--text-muted)}
+.cart-item-sub{font-size:14px;font-weight:700;color:var(--primary-light)}
+.cart-divider{height:1px;background:var(--border);margin:4px 0 12px}
+.cart-subtotal-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.cart-tax-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-bottom:8px}
+.cart-grand-divider{height:1px;background:var(--border-light);margin:6px 0 10px}
+.cart-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.cart-total-label{font-size:14px;font-weight:600;color:var(--text-muted)}
+.cart-sub-amt{font-size:14px;font-weight:600;color:var(--text-muted)}
+.cart-tax-amt{font-size:14px;font-weight:600;color:var(--text-muted)}
+.cart-total-amt{font-size:26px;font-weight:800;color:var(--text)}
+.name-input{width:100%;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:8px}
+.name-input:focus{outline:none;border-color:var(--primary)}
+.name-input::placeholder{color:var(--text-muted)}
+.note-textarea{width:100%;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:52px;margin-bottom:16px}
+.note-textarea:focus{outline:none;border-color:var(--primary)}
+.note-textarea::placeholder{color:var(--text-muted)}
+.payment-heading{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+.payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.pay-btn.full{grid-column:1/-1}
+.pay-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.pay-btn.active{border-color:var(--success);background:rgba(59,181,106,.12);color:var(--success)}
+.place-btn{width:100%;padding:17px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-lg);font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.02em;transition:opacity .15s,transform .1s}
+.place-btn:disabled{opacity:.35;cursor:not-allowed}
+.place-btn:not(:disabled):active{transform:scale(.98)}
+.cart-close-btn{display:none;width:100%;padding:12px;background:var(--surface-3);color:var(--text-muted);border:none;border-radius:var(--radius);font-size:14px;cursor:pointer;margin-bottom:14px}
+@media(max-width:680px){.cart-close-btn{display:block}}
+
+/* ── FLOAT CART BTN (mobile) — removed ── */
+
+/* ── RECENT ORDERS ── */
+.recent-section{max-width:1000px;margin:0 auto;padding:20px;width:100%}
+.order-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.order-num-chip{background:var(--surface-3);border-radius:8px;padding:4px 11px;font-size:13px;font-weight:700;min-width:54px;text-align:center;flex-shrink:0}
+.status-chip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0}
+.status-chip.open{background:rgba(240,180,41,.18);color:var(--warning)}
+.status-chip.complete{background:rgba(59,181,106,.18);color:var(--success)}
+.order-row-items{flex:1;font-size:13px;color:var(--text-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.order-row-total{font-size:14px;font-weight:700;flex-shrink:0}
+.order-row-time{font-size:12px;color:var(--text-muted);flex-shrink:0}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--surface-2);border:1px solid var(--border-light);color:var(--text);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;box-shadow:var(--shadow);animation:fadeUp .22s ease;white-space:nowrap}
+.toast.success{border-color:var(--success);color:var(--success)}
+.toast.error{border-color:var(--danger);color:var(--danger)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div style="font-size:32px">🍖</div>
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text-muted)">Connecting…</div>
+</div>
+
+<header class="app-header">
+  <div class="header-brand">
+    <span class="logo">🍖</span>
+    <div>
+      <h1>The Food Wagon</h1>
+      <p>Order Station</p>
+    </div>
+  </div>
+  <button class="cart-pill" id="cart-pill" onclick="openCart()">🛒 0 items</button>
+</header>
+
+<div class="main-wrap">
+
+  <!-- ── MENU ── -->
+  <div class="menu-panel">
+    <div class="panel-title">Menu</div>
+    <div class="menu-grid" id="menu-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Loading menu…</div>
+    </div>
+  </div>
+
+  <!-- ── CART ── -->
+  <div class="cart-panel" id="cart-panel">
+    <button class="cart-close-btn" onclick="closeCart()">✕ Close</button>
+    <div class="panel-title">Current Order</div>
+
+    <div class="cart-items" id="cart-items">
+      <div class="cart-empty">No items yet.<br>Select from the menu.</div>
+    </div>
+
+    <div class="cart-divider"></div>
+    <div class="cart-subtotal-row">
+      <span class="cart-total-label">Subtotal</span>
+      <span class="cart-sub-amt" id="cart-subtotal">$0.00</span>
+    </div>
+    <div class="cart-tax-row">
+      <span class="cart-total-label">Tax (10%)</span>
+      <span class="cart-tax-amt" id="cart-tax">$0.00</span>
+    </div>
+    <div class="cart-grand-divider"></div>
+    <div class="cart-total-row">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-amt" id="cart-total">$0.00</span>
+    </div>
+
+    <input id="order-name" class="name-input" type="text" placeholder="Customer name (optional)">
+    <textarea id="order-note" class="note-textarea" placeholder="Special requests, allergies…" rows="2"></textarea>
+
+    <div class="payment-heading">Payment Received Via</div>
+    <div class="payment-grid">
+      <button class="pay-btn" data-method="cash"    onclick="pickPayment(this)">💵 Cash</button>
+      <button class="pay-btn" data-method="card"    onclick="pickPayment(this)">💳 Card</button>
+      <button class="pay-btn" data-method="venmo"   onclick="pickPayment(this)">📱 Venmo</button>
+      <button class="pay-btn" data-method="cashapp" onclick="pickPayment(this)">💚 CashApp</button>
+      <button class="pay-btn full" data-method="other" onclick="pickPayment(this)">🔄 Other</button>
+    </div>
+
+    <button class="place-btn" id="place-btn" onclick="placeOrder()" disabled>Place Order</button>
+  </div>
+
+</div>
+
+<!-- Float cart button (mobile) -->
+
+<!-- Recent Orders -->
+<div class="recent-section">
+  <div class="panel-title" style="margin-bottom:12px">Recent Orders</div>
+  <div id="order-history"></div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+// ── Firebase ──────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyD1uy6fNfjFDByoj4F85FYXU9NmVnVNyqI",
+  authDomain: "thefoodwagon-44c60.firebaseapp.com",
+  databaseURL: "https://thefoodwagon-44c60-default-rtdb.firebaseio.com",
+  projectId: "thefoodwagon-44c60",
+  storageBucket: "thefoodwagon-44c60.firebasestorage.app",
+  messagingSenderId: "47761433364",
+  appId: "1:47761433364:web:416dc49ef5d1758f659801"
+});
+const db = firebase.database();
+
+// ── State ─────────────────────────────────────────────────
+let menuItems = [];
+let cart = {};           // { menuItemId: qty }
+let selectedPayment = null;
+let recentOrders = [];
+let loaded = false;
+
+// ── Utils ─────────────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function uuid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function pad(n){ return String(n).padStart(3,'0'); }
+
+function showToast(msg, type='info', ms=3200){
+  const c=document.getElementById('toast-wrap');
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), ms);
+}
+
+// ── Firebase listeners ────────────────────────────────────
+db.ref('menuItems').on('value', snap => {
+  menuItems = Object.values(snap.val()||{}).filter(Boolean);
+  renderMenuGrid();
+  if (!loaded) {
+    document.getElementById('loading-overlay').style.display='none';
+    loaded = true;
+  }
+});
+
+db.ref('orders').orderByChild('createdAt').limitToLast(25).on('value', snap => {
+  recentOrders = Object.values(snap.val()||{}).filter(Boolean)
+    .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  renderHistory();
+});
+
+// ── Menu ──────────────────────────────────────────────────
+function renderMenuGrid(){
+  const g = document.getElementById('menu-grid');
+  if (!menuItems.length){
+    g.innerHTML = `<div class="no-menu"><h3>No menu items found</h3><p>Add items in the inventory manager's Menu tab first.</p></div>`;
+    return;
+  }
+  g.innerHTML = menuItems.map(mi => {
+    const qty = cart[mi.id]||0;
+    const hasPrice = mi.salePrice > 0;
+    return `<div class="menu-card ${qty>0?'has-qty':''}" id="mc-${mi.id}">
+      ${qty>0?`<div class="qty-badge">${qty}</div>`:''}
+      <div class="menu-card-name">${esc(mi.name)}</div>
+      <div class="menu-card-price ${hasPrice?'':'no-price'}">${hasPrice?'$'+mi.salePrice.toFixed(2):'No price'}</div>
+      <div class="qty-controls">
+        <button class="qty-btn" onclick="adj('${mi.id}',-1)">−</button>
+        <span class="qty-num">${qty}</span>
+        <button class="qty-btn" onclick="adj('${mi.id}',1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adj(id, delta){
+  const n = Math.max(0, (cart[id]||0)+delta);
+  if (n===0) delete cart[id]; else cart[id]=n;
+  renderMenuGrid();
+  renderCartPanel();
+  updateCartBadge();
+}
+
+// ── Cart ──────────────────────────────────────────────────
+function renderCartPanel(){
+  const el = document.getElementById('cart-items');
+  const totalEl = document.getElementById('cart-total');
+  const placeBtn = document.getElementById('place-btn');
+  const entries = Object.entries(cart);
+
+  if (!entries.length){
+    el.innerHTML = '<div class="cart-empty">No items yet.<br>Select from the menu.</div>';
+    document.getElementById('cart-subtotal').textContent = '$0.00';
+    document.getElementById('cart-tax').textContent = '$0.00';
+    totalEl.textContent = '$0.00';
+    placeBtn.disabled = true;
+    return;
+  }
+
+  const TAX_RATE = 0.10;
+  let subtotal = 0;
+  el.innerHTML = entries.map(([id,qty]) => {
+    const mi = menuItems.find(m=>m.id===id);
+    if (!mi) return '';
+    const sub = qty*(mi.salePrice||0);
+    subtotal += sub;
+    return `<div class="cart-item">
+      <span class="cart-item-name">${esc(mi.name)}</span>
+      <span class="cart-item-qty">× ${qty}</span>
+      <span class="cart-item-sub">${mi.salePrice>0?'$'+sub.toFixed(2):'—'}</span>
+    </div>`;
+  }).join('');
+
+  const tax = subtotal * TAX_RATE;
+  const grandTotal = subtotal + tax;
+  document.getElementById('cart-subtotal').textContent = '$'+subtotal.toFixed(2);
+  document.getElementById('cart-tax').textContent = '$'+tax.toFixed(2);
+  totalEl.textContent = '$'+grandTotal.toFixed(2);
+  placeBtn.disabled = !(entries.length && selectedPayment);
+}
+
+function updateCartBadge(){
+  const count = Object.values(cart).reduce((s,v)=>s+v,0);
+  const pill = document.getElementById('cart-pill');
+  if (count>0){
+    pill.style.display=''; pill.textContent=`🛒 ${count} item${count>1?'s':''}`;
+  } else {
+    pill.style.display='none';
+  }
+}
+
+function pickPayment(btn){
+  document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedPayment = btn.dataset.method;
+  renderCartPanel();
+}
+
+function openCart(){
+  document.getElementById('cart-panel').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeCart(){
+  document.getElementById('cart-panel').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ── Place Order ───────────────────────────────────────────
+async function placeOrder(){
+  if (!Object.keys(cart).length){ showToast('Add items first.','error'); return; }
+  if (!selectedPayment){ showToast('Select a payment method.','error'); return; }
+
+  const btn = document.getElementById('place-btn');
+  btn.disabled = true;
+  btn.textContent = 'Placing order…';
+
+  try {
+    // Atomic order number
+    const result = await db.ref('orderCounter').transaction(n => (n||0)+1);
+    const orderNum = result.snapshot.val();
+    const now = new Date().toISOString();
+    const note = document.getElementById('order-note').value.trim();
+    const customerName = document.getElementById('order-name').value.trim();
+    const TAX_RATE = 0.10;
+    let subtotal = 0;
+
+    const items = Object.entries(cart).map(([id,qty]) => {
+      const mi = menuItems.find(m=>m.id===id);
+      const sub = qty*(mi?.salePrice||0);
+      subtotal += sub;
+      return { menuItemId:id, menuItemName:mi?.name||'?', qty, unitPrice:mi?.salePrice||0, subtotal:sub };
+    });
+
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+    const ordId = uuid();
+    await db.ref('orders/'+ordId).set({
+      id: ordId, orderNumber: orderNum, items, note, name: customerName,
+      subtotal, tax, total,
+      paymentMethod: selectedPayment, paid: true,
+      status: 'open', createdAt: now, completedAt: null
+    });
+
+    // Reset
+    cart = {}; selectedPayment = null;
+    document.getElementById('order-name').value = '';
+    document.getElementById('order-note').value = '';
+    document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
+    renderMenuGrid(); renderCartPanel(); updateCartBadge();
+    closeCart();
+    showToast(`✅ Order #${pad(orderNum)} placed!`, 'success', 4000);
+
+  } catch(e){
+    showToast('Error: '+e.message,'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+    // Re-evaluate disabled state
+    setTimeout(() => {
+      const entries = Object.entries(cart);
+      document.getElementById('place-btn').disabled = !(entries.length && selectedPayment);
+    }, 50);
+  }
+}
+
+// ── History ───────────────────────────────────────────────
+function renderHistory(){
+  const c = document.getElementById('order-history');
+  if (!recentOrders.length){
+    c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">No orders yet.</div>';
+    return;
+  }
+  c.innerHTML = recentOrders.slice(0,20).map(o => {
+    const t = new Date(o.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const items = (o.items||[]).map(i=>`${i.qty}× ${i.menuItemName}`).join(', ');
+    const st = o.status||'open';
+    return `<div class="order-row">
+      <span class="order-num-chip">#${pad(o.orderNumber||0)}</span>
+      <span class="status-chip ${st}">${st==='complete'?'✓ Done':'⏳ Open'}</span>
+      <span class="order-row-items">${esc(items)}</span>
+      <span class="order-row-total">$${(o.total||0).toFixed(2)}</span>
+      <span class="order-row-time">${t}</span>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- iOS full-screen web app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kitchen">
+<title>Kitchen Display — The Food Wagon</title>
+<style>
+:root {
+  --bg: #07090e; --surface: #0d1018; --surface-2: #131722;
+  --border: #1a2030; --border-new: #f0b429;
+  --text: #ffffff; --text-dim: #8899bb; --text-muted: #4a556a;
+  --primary: #e87d2b; --success: #2fc86a; --danger: #e84f3b;
+  --warning: #f0b429; --radius: 14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+/* ── AUDIO UNLOCK OVERLAY ── */
+#unlock-overlay{
+  position:fixed;inset:0;background:rgba(7,9,14,.97);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:20px;z-index:999;cursor:pointer;
+}
+#unlock-overlay h2{font-size:24px;font-weight:800;letter-spacing:.02em}
+#unlock-overlay p{font-size:15px;color:var(--text-dim);text-align:center;max-width:320px;line-height:1.5}
+.tap-ring{
+  width:80px;height:80px;border-radius:50%;border:3px solid var(--warning);
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+  animation:ringPulse 1.6s ease-in-out infinite;
+}
+@keyframes ringPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(240,180,41,.5)}
+  50%{box-shadow:0 0 0 20px rgba(240,180,41,0)}
+}
+
+/* ── HEADER BAR ── */
+.kds-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.kds-brand{display:flex;align-items:center;gap:10px}
+.kds-brand .logo{font-size:22px}
+.kds-brand h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.kds-brand p{font-size:11px;color:var(--text-muted);margin-top:1px}
+
+.kds-stats{display:flex;align-items:center;gap:16px}
+.order-count-badge{
+  background:var(--primary);color:#fff;
+  padding:7px 16px;border-radius:20px;
+  font-size:14px;font-weight:800;letter-spacing:.02em;
+  min-width:52px;text-align:center;
+}
+.order-count-badge.empty{background:var(--border);color:var(--text-muted)}
+.kds-clock{font-size:20px;font-weight:700;letter-spacing:.04em;color:var(--text);font-variant-numeric:tabular-nums}
+
+/* ── MAIN ORDERS AREA ── */
+.kds-body{
+  flex:1;overflow-y:auto;padding:16px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;
+  align-content:start;
+}
+/* Needed for full-height flex layout */
+.kds-root{display:flex;flex-direction:column;height:100%;height:100dvh}
+
+/* scrollbar */
+.kds-body::-webkit-scrollbar{width:6px}
+.kds-body::-webkit-scrollbar-track{background:transparent}
+.kds-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ── ORDER CARDS ── */
+.order-card{
+  background:var(--surface);
+  border:2px solid var(--border);
+  border-radius:var(--radius);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:border-color .3s, transform .15s;
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.order-card:active{transform:scale(.985)}
+.order-card-hint{
+  text-align:center;padding:10px 14px;
+  font-size:12px;color:var(--text-muted);
+  letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  border-top:1px solid var(--border);
+}
+
+/* New order: amber pulse */
+@keyframes newPulse{
+  0%  {box-shadow:0 0 0 0 rgba(240,180,41,.7);border-color:#f0b429}
+  60% {box-shadow:0 0 0 14px rgba(240,180,41,0);border-color:rgba(240,180,41,.5)}
+  100%{box-shadow:0 0 0 0 rgba(240,180,41,0);border-color:#f0b429}
+}
+.order-card.is-new{
+  border-color:var(--border-new) !important;
+  animation:newPulse 1.6s ease-in-out infinite;
+}
+
+.card-header{
+  padding:14px 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  gap:10px;
+}
+.order-num{font-size:36px;font-weight:900;letter-spacing:-.02em;line-height:1}
+.card-meta{text-align:right}
+.order-elapsed{font-size:14px;font-weight:600;color:var(--text-dim)}
+.new-badge{
+  display:inline-block;background:var(--warning);color:#000;
+  font-size:10px;font-weight:800;letter-spacing:.08em;
+  padding:3px 8px;border-radius:6px;margin-top:4px;
+  text-transform:uppercase;
+}
+.payment-tag{
+  font-size:11px;color:var(--text-muted);margin-top:4px;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+}
+
+/* Items */
+.card-items{padding:12px 16px;flex:1}
+.card-item-row{
+  display:flex;gap:12px;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--border);
+}
+.card-item-row:last-child{border-bottom:none}
+.item-qty{
+  font-size:22px;font-weight:800;color:var(--primary);
+  min-width:36px;flex-shrink:0;line-height:1;
+}
+.item-name{font-size:17px;font-weight:600;line-height:1.3}
+
+/* Customer name */
+.card-name{
+  margin:0 16px 6px;
+  font-size:15px;font-weight:700;color:var(--text);
+}
+
+/* Note */
+.card-note{
+  margin:0 14px 10px;padding:9px 12px;
+  background:rgba(240,180,41,.1);border-left:3px solid var(--warning);
+  border-radius:0 8px 8px 0;
+  font-size:14px;color:var(--warning);font-weight:500;line-height:1.4;
+}
+
+/* ── NO ORDERS STATE ── */
+.no-orders{
+  grid-column:1/-1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:60px 20px;color:var(--text-muted);text-align:center;
+}
+.no-orders .icon{font-size:52px;opacity:.3}
+.no-orders h2{font-size:22px;font-weight:700;color:var(--text-muted)}
+.no-orders p{font-size:14px;max-width:280px;line-height:1.5}
+
+/* ── PREVIOUS ORDERS BUTTON ── */
+.prev-orders-btn{
+  background:var(--surface-2);color:var(--text-dim);
+  border:1px solid var(--border);border-radius:20px;
+  padding:7px 14px;font-size:13px;font-weight:700;
+  cursor:pointer;letter-spacing:.02em;white-space:nowrap;
+  transition:border-color .2s, color .2s;
+}
+.prev-orders-btn:active{opacity:.75}
+
+/* ── CONFIRMATION MODAL ── */
+#confirm-modal{
+  position:fixed;inset:0;background:rgba(7,9,14,.88);
+  display:none;align-items:center;justify-content:center;
+  z-index:200;padding:20px;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+}
+#confirm-modal.visible{display:flex}
+.confirm-box{
+  background:var(--surface-2);border:2px solid var(--border);
+  border-radius:18px;padding:28px 24px 24px;
+  max-width:360px;width:100%;text-align:center;
+}
+.confirm-title{font-size:14px;font-weight:700;color:var(--text-muted);
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.confirm-order-num{
+  font-size:56px;font-weight:900;letter-spacing:-.03em;
+  color:var(--primary);line-height:1;margin-bottom:14px;
+}
+.confirm-items{
+  margin:0 0 18px;text-align:left;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:10px 0;max-height:200px;overflow-y:auto;
+}
+.confirm-item-row{display:flex;gap:10px;padding:5px 0;font-size:16px;align-items:baseline}
+.confirm-item-qty{font-weight:800;color:var(--primary);min-width:28px;flex-shrink:0}
+.confirm-item-name{font-weight:600}
+.confirm-actions{display:flex;gap:10px}
+.confirm-btn{
+  flex:1;padding:17px;border:none;border-radius:12px;
+  font-size:17px;font-weight:800;letter-spacing:.03em;
+  cursor:pointer;text-transform:uppercase;
+  transition:transform .1s,opacity .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.confirm-btn:active{transform:scale(.96)}
+.confirm-yes{background:var(--success);color:#fff}
+.confirm-no{background:var(--border);color:var(--text)}
+
+/* ── PREVIOUS ORDERS PANEL ── */
+#prev-panel{
+  position:fixed;inset:0;z-index:150;
+  display:none;flex-direction:column;
+  background:var(--bg);
+}
+#prev-panel.visible{display:flex}
+.prev-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.prev-header h2{font-size:17px;font-weight:800}
+.prev-close-btn{
+  background:var(--border);border:none;border-radius:10px;
+  color:var(--text);padding:10px 18px;font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.prev-body{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.prev-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+}
+.prev-num{font-size:28px;font-weight:900;color:var(--text-muted);min-width:60px;line-height:1}
+.prev-info{flex:1;min-width:0}
+.prev-info-name{font-size:15px;font-weight:700}
+.prev-items-text{font-size:13px;color:var(--text-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prev-time{font-size:12px;color:var(--text-muted);margin-top:4px}
+.prev-reopen-btn{
+  background:var(--warning);color:#000;border:none;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;
+  flex-shrink:0;white-space:nowrap;
+}
+.prev-empty{
+  text-align:center;padding:60px 20px;color:var(--text-muted);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.prev-empty .icon{font-size:44px;opacity:.25}
+.prev-loading{text-align:center;padding:40px;color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<!-- Audio unlock overlay -->
+<div id="unlock-overlay" onclick="activateDisplay()">
+  <div class="tap-ring">🍖</div>
+  <h2>Kitchen Display</h2>
+  <p>Tap anywhere to activate audio alerts and start the display.</p>
+</div>
+
+<div class="kds-root">
+  <!-- Header -->
+  <div class="kds-header">
+    <div class="kds-brand">
+      <span class="logo">🍖</span>
+      <div>
+        <h1>The Food Wagon</h1>
+        <p>Open Orders</p>
+      </div>
+    </div>
+    <div class="kds-stats">
+      <button class="prev-orders-btn" onclick="showPreviousOrders()">📋 Previous</button>
+      <div class="order-count-badge empty" id="order-count">0 Orders</div>
+      <div class="kds-clock" id="kds-clock">--:-- --</div>
+    </div>
+  </div>
+
+  <!-- Orders grid -->
+  <div class="kds-body" id="orders-grid">
+    <div class="no-orders">
+      <div class="icon">✓</div>
+      <h2>All Clear</h2>
+      <p>No open orders right now.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation modal -->
+<div id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-modal-title">Mark as Complete?</div>
+    <div class="confirm-order-num" id="confirm-num">#000</div>
+    <div class="confirm-items" id="confirm-items"></div>
+    <div class="confirm-actions">
+      <button class="confirm-btn confirm-no" onclick="cancelComplete()">Cancel</button>
+      <button class="confirm-btn confirm-yes" onclick="confirmComplete()">✓ Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Previous orders panel -->
+<div id="prev-panel">
+  <div class="prev-header">
+    <h2>📋 Previous Orders</h2>
+    <button class="prev-close-btn" onclick="closePreviousOrders()">✕ Close</button>
+  </div>
+  <div class="prev-body" id="prev-body">
+    <div class="prev-loading">Loading…</div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+// ── Firebase ──────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyD1uy6fNfjFDByoj4F85FYXU9NmVnVNyqI",
+  authDomain: "thefoodwagon-44c60.firebaseapp.com",
+  databaseURL: "https://thefoodwagon-44c60-default-rtdb.firebaseio.com",
+  projectId: "thefoodwagon-44c60",
+  storageBucket: "thefoodwagon-44c60.firebasestorage.app",
+  messagingSenderId: "47761433364",
+  appId: "1:47761433364:web:416dc49ef5d1758f659801"
+});
+const db = firebase.database();
+
+// ── State ─────────────────────────────────────────────────
+let audioCtx = null;
+let audioReady = false;
+let isFirstLoad = true;
+let knownOrderIds = new Set();
+let openOrders = [];
+let pendingComplete = null; // { id, firebaseKey }
+let elapsedTimer = null;
+let wakeLock = null;
+
+// ── Audio unlock (iOS requires user gesture) ───────────────
+function activateDisplay(){
+  document.getElementById('unlock-overlay').style.display = 'none';
+
+  // Create audio context
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => { audioReady = true; });
+  } else {
+    audioReady = true;
+  }
+
+  // Request wake lock (prevent screen sleep)
+  requestWakeLock();
+
+  // Start listening
+  startOrderListener();
+}
+
+// ── Wake lock ─────────────────────────────────────────────
+async function requestWakeLock(){
+  try {
+    if ('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* not available in all contexts */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+// ── Order sound (3-tone chime) ────────────────────────────
+function playOrderSound(){
+  if (!audioReady || !audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  const tones = [880, 1100, 1320]; // A5, C#6, E6 — ascending chime
+  tones.forEach((freq, i) => {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const t0   = audioCtx.currentTime + i * 0.18;
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.4, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.32);
+  });
+  // Extra ding after all three
+  setTimeout(() => {
+    if (!audioReady) return;
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const t0   = audioCtx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.3, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + 0.52);
+  }, 650);
+}
+
+// ── Firebase listener ─────────────────────────────────────
+function startOrderListener(){
+  db.ref('orders').orderByChild('createdAt').limitToLast(100).on('value', snap => {
+    // Use forEach to capture the real Firebase key on each order object
+    const all = [];
+    snap.forEach(child => {
+      const o = child.val();
+      if (o) { o._key = child.key; all.push(o); }
+    });
+    openOrders = all.filter(o => o.status === 'open')
+                    .sort((a,b) => a.createdAt?.localeCompare(b.createdAt||''));
+
+    // Detect and announce new orders
+    if (!isFirstLoad){
+      let newCount = 0;
+      openOrders.forEach(o => {
+        if (!knownOrderIds.has(o.id)) newCount++;
+      });
+      if (newCount > 0) playOrderSound();
+    }
+
+    knownOrderIds = new Set(openOrders.map(o => o.id));
+    isFirstLoad = false;
+
+    renderOrders();
+    updateHeader();
+  });
+}
+
+// ── Render orders ─────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function pad(n){ return String(n||0).padStart(3,'0'); }
+
+const PAY_ICONS = { cash:'💵', card:'💳', venmo:'📱', cashapp:'💚', other:'🔄' };
+
+function elapsed(createdAt){
+  const ms = Date.now() - new Date(createdAt).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'Just now';
+  return mins + 'm ago';
+}
+
+function isNew(createdAt){
+  return (Date.now() - new Date(createdAt).getTime()) < 10 * 60 * 1000; // 10 min
+}
+
+function renderOrders(){
+  const grid = document.getElementById('orders-grid');
+
+  if (!openOrders.length){
+    grid.innerHTML = `<div class="no-orders">
+      <div class="icon">✓</div>
+      <h2>All Clear</h2>
+      <p>No open orders. Waiting for new orders…</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = openOrders.map(o => {
+    const nw = isNew(o.createdAt);
+    const el = elapsed(o.createdAt);
+    const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
+    const payLabel = (o.paymentMethod||'').toUpperCase();
+
+    const itemRows = (o.items||[]).map(i =>
+      `<div class="card-item-row">
+        <span class="item-qty">${i.qty}</span>
+        <span class="item-name">${esc(i.menuItemName)}</span>
+      </div>`
+    ).join('');
+
+    const noteHtml = o.note
+      ? `<div class="card-note">📝 ${esc(o.note)}</div>`
+      : '';
+
+    const nameHtml = o.name
+      ? `<div class="card-name">👤 ${esc(o.name)}</div>`
+      : '';
+
+    return `<div class="order-card ${nw?'is-new':''}" id="card-${o.id}" data-created="${o.createdAt}" onclick="tapOrder('${o.id}')">
+      <div class="card-header">
+        <div class="order-num">#${pad(o.orderNumber)}</div>
+        <div class="card-meta">
+          <div class="order-elapsed" id="elapsed-${o.id}">${el}</div>
+          ${nw?'<div class="new-badge">New</div>':''}
+          <div class="payment-tag">${payIcon} ${payLabel}</div>
+        </div>
+      </div>
+      ${nameHtml}
+      <div class="card-items">${itemRows}</div>
+      ${noteHtml}
+      <div class="order-card-hint">Tap to complete</div>
+    </div>`;
+  }).join('');
+
+  // Restart elapsed timer
+  if (elapsedTimer) clearInterval(elapsedTimer);
+  elapsedTimer = setInterval(refreshElapsed, 30000);
+}
+
+function refreshElapsed(){
+  openOrders.forEach(o => {
+    const el = document.getElementById('elapsed-'+o.id);
+    if (el) el.textContent = elapsed(o.createdAt);
+
+    // Remove flash class after 10 min
+    const card = document.getElementById('card-'+o.id);
+    if (card) {
+      if (isNew(o.createdAt)){
+        card.classList.add('is-new');
+      } else {
+        card.classList.remove('is-new');
+      }
+    }
+  });
+}
+
+// ── Tap order card → show confirmation modal ───────────────
+function tapOrder(orderId){
+  const order = openOrders.find(o => o.id === orderId);
+  if (!order) return;
+
+  pendingComplete = { id: orderId, firebaseKey: order._key || orderId };
+
+  document.getElementById('confirm-num').textContent = '#' + pad(order.orderNumber);
+
+  const rows = (order.items||[]).map(i =>
+    `<div class="confirm-item-row">
+      <span class="confirm-item-qty">${i.qty}</span>
+      <span class="confirm-item-name">${esc(i.menuItemName)}</span>
+    </div>`
+  ).join('');
+  document.getElementById('confirm-items').innerHTML = rows;
+
+  // Show name in modal title if present
+  const titleEl = document.getElementById('confirm-modal-title');
+  titleEl.textContent = order.name ? `Complete — ${order.name}?` : 'Mark as Complete?';
+
+  document.getElementById('confirm-modal').classList.add('visible');
+}
+
+function cancelComplete(){
+  pendingComplete = null;
+  document.getElementById('confirm-modal').classList.remove('visible');
+}
+
+function confirmComplete(){
+  if (!pendingComplete) return;
+  const { id: orderId, firebaseKey } = pendingComplete;
+  pendingComplete = null;
+  document.getElementById('confirm-modal').classList.remove('visible');
+
+  // Optimistically remove the order from the board immediately
+  openOrders = openOrders.filter(o => o.id !== orderId);
+  renderOrders();
+  updateHeader();
+
+  // Use the real Firebase key (not the id field) to guarantee the right path
+  db.ref('orders/'+firebaseKey).update({
+    status: 'complete',
+    completedAt: new Date().toISOString()
+  }).catch(e => {
+    console.error('Failed to complete order', firebaseKey, e);
+  });
+}
+
+// ── Previous orders panel ──────────────────────────────────
+function showPreviousOrders(){
+  const panel = document.getElementById('prev-panel');
+  const body  = document.getElementById('prev-body');
+  panel.classList.add('visible');
+  body.innerHTML = '<div class="prev-loading">Loading…</div>';
+
+  db.ref('orders')
+    .orderByChild('status').equalTo('complete')
+    .limitToLast(30)
+    .once('value', snap => {
+      const orders = [];
+      snap.forEach(child => {
+        const o = child.val();
+        if (o) { o._key = child.key; orders.push(o); }
+      });
+      orders.sort((a,b) => (b.completedAt||'').localeCompare(a.completedAt||''));
+
+      if (!orders.length){
+        body.innerHTML = `<div class="prev-empty">
+          <span class="icon">📋</span>
+          <p>No completed orders yet.</p>
+        </div>`;
+        return;
+      }
+
+      body.innerHTML = orders.map(o => {
+        const itemsSummary = (o.items||[]).map(i => i.qty + '× ' + i.menuItemName).join(', ');
+        const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
+        const payLabel = (o.paymentMethod||'').toUpperCase();
+        const when = o.completedAt
+          ? new Date(o.completedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})
+          : '—';
+        return `<div class="prev-card">
+          <div class="prev-num">#${pad(o.orderNumber)}</div>
+          <div class="prev-info">
+            <div class="prev-info-name">${payIcon} ${payLabel} · $${(o.total||0).toFixed(2)}</div>
+            <div class="prev-items-text">${esc(itemsSummary)}</div>
+            <div class="prev-time">Completed ${when}</div>
+          </div>
+          <button class="prev-reopen-btn" onclick="reopenOrder('${o._key||o.id}')">↩ Reopen</button>
+        </div>`;
+      }).join('');
+    });
+}
+
+function closePreviousOrders(){
+  document.getElementById('prev-panel').classList.remove('visible');
+}
+
+function reopenOrder(firebaseKey){
+  if (!confirm('Reopen this order?')) return;
+  db.ref('orders/'+firebaseKey).update({
+    status: 'open',
+    completedAt: null
+  }).then(() => {
+    closePreviousOrders();
+  }).catch(e => {
+    alert('Could not reopen order. Check connection.');
+  });
+}
+
+// ── Header updates ─────────────────────────────────────────
+function updateHeader(){
+  const badge = document.getElementById('order-count');
+  const n = openOrders.length;
+  if (n === 0){
+    badge.textContent = '0 Orders';
+    badge.className = 'order-count-badge empty';
+  } else {
+    badge.textContent = n + (n===1?' Order':' Orders');
+    badge.className = 'order-count-badge';
+  }
+}
+
+// ── Clock ─────────────────────────────────────────────────
+function updateClock(){
+  const now = new Date();
+  const h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  document.getElementById('kds-clock').textContent = `${h12}:${m} ${ampm}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
