@@ -233,6 +233,17 @@
   .toast.info{border-left:3px solid var(--info)}
   @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
+  /* ── INGREDIENT ROWS (menu builder) ── */
+  .ingredient-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
+  .ingredient-row:last-child{border-bottom:none}
+  .ingredient-row .ing-item-select{flex:1;min-width:0}
+  .ing-srv-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap}
+
+  /* ── RECAP LINE ROWS ── */
+  .recap-line-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+  .recap-line-row:last-child{border-bottom:none}
+  .recap-line-name{flex:1;min-width:0;padding-right:12px}
+
   @media(max-width:600px){
     .main{padding:16px}
     .stat-grid{grid-template-columns:1fr 1fr}
@@ -291,6 +302,12 @@
   </button>
   <button class="nav-tab" data-tab="finances">
     <span class="tab-icon">💵</span><span class="tab-label">Finances</span>
+  </button>
+  <button class="nav-tab" data-tab="menu">
+    <span class="tab-icon">🍽️</span><span class="tab-label">Menu</span>
+  </button>
+  <button class="nav-tab" data-tab="recap">
+    <span class="tab-icon">📋</span><span class="tab-label">Daily Recap</span>
   </button>
 </nav>
 
@@ -504,6 +521,49 @@
         <table>
           <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead>
           <tbody id="fin-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MENU BUILDER ── -->
+  <div class="tab-panel" id="panel-menu">
+    <div class="section-header">
+      <div class="section-title">🍽️ Menu Builder</div>
+      <button class="btn btn-primary" onclick="openMenuItemModal()">+ New Menu Item</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      Define what goes into each menu item — which inventory ingredients and how many servings of each per portion.
+      This powers the Daily Recap auto-deduction.
+    </p>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Menu Item</th><th>Sale Price</th><th>Ingredients</th><th>Est. Cost / Item</th><th>Margin</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="menu-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DAILY RECAP ── -->
+  <div class="tab-panel" id="panel-recap">
+    <div class="section-header">
+      <div class="section-title">📋 Daily Recap</div>
+      <button class="btn btn-primary" onclick="openRecapModal()">+ Log Daily Sales</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      Log how many of each menu item you sold. Ingredient inventory is deducted automatically and revenue is logged to Finances.
+    </p>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Note</th><th>Items Sold</th><th>Revenue</th><th>Est. Cost</th><th>Gross Profit</th><th></th>
+          </tr></thead>
+          <tbody id="recap-history-body"></tbody>
         </table>
       </div>
     </div>
@@ -741,6 +801,86 @@
   </div>
 </div>
 
+<!-- Menu Item Modal -->
+<div class="modal-backdrop" id="menu-item-modal-backdrop">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="menu-item-modal-title">New Menu Item</div>
+      <button class="modal-close" onclick="closeModal('menu-item-modal-backdrop')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Menu Item Name *</label>
+            <input type="text" id="menu-item-name" placeholder="e.g. Brisket Taco">
+          </div>
+          <div class="form-group">
+            <label>Sale Price / Item ($)</label>
+            <div class="input-prefix"><span>$</span><input type="number" id="menu-item-price" placeholder="0.00" min="0" step="0.01"></div>
+            <div class="form-hint">What you charge per unit sold</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-divider">Ingredients</div>
+          <div class="form-hint" style="margin:8px 0">How many servings of each inventory item goes into <em>one</em> portion of this menu item.</div>
+          <div id="ingredient-rows" style="margin-bottom:12px"></div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="addIngredient()">+ Add Ingredient</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('menu-item-modal-backdrop')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMenuItem()">Save Menu Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Daily Recap Modal -->
+<div class="modal-backdrop" id="recap-modal-backdrop">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title">Log Daily Sales</div>
+      <button class="modal-close" onclick="closeModal('recap-modal-backdrop')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="recap-date">
+          </div>
+          <div class="form-group">
+            <label>Note (optional)</label>
+            <input type="text" id="recap-note" placeholder="e.g. Saturday Farmers Market">
+          </div>
+        </div>
+        <div>
+          <div class="section-divider">How many of each item did you sell?</div>
+          <div id="recap-line-items" style="margin-top:8px"></div>
+        </div>
+        <div id="recap-preview" style="display:none;background:var(--surface-3);border-radius:var(--radius);padding:14px">
+          <div class="card-title" style="margin-bottom:10px">📊 Summary</div>
+          <div class="form-row-3">
+            <div><div class="stat-label">Total Items</div><div class="bold" id="recap-prev-qty">—</div></div>
+            <div><div class="stat-label">Revenue</div><div class="bold text-success" id="recap-prev-rev">—</div></div>
+            <div><div class="stat-label">Est. Cost</div><div class="bold text-danger" id="recap-prev-cost">—</div></div>
+          </div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <div class="stat-label">Gross Profit</div>
+            <div class="bold" style="font-size:20px" id="recap-prev-profit">—</div>
+          </div>
+          <div class="form-hint" style="margin-top:10px">Submitting will deduct ingredient servings from inventory and log revenue to Finances.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('recap-modal-backdrop')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRecap()">✅ Submit Recap</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
@@ -763,8 +903,8 @@ const db = firebase.database();
 // ══════════════════════════════════════════════════════
 //  IN-MEMORY STATE  (populated by real-time listeners)
 // ══════════════════════════════════════════════════════
-let _st = { items: {}, transactions: {}, finances: {} };
-let _rdy = { items: false, transactions: false, finances: false };
+let _st = { items: {}, transactions: {}, finances: {}, menuItems: {}, salesSessions: {} };
+let _rdy = { items: false, transactions: false, finances: false, menuItems: false, salesSessions: false };
 let editingItemId = null;
 let stockDirection = 'in';
 let stockQtyMode = 'units'; // 'units' or 'servings'
@@ -773,14 +913,14 @@ function getData(key) {
   return Object.values(_st[key] || {}).filter(Boolean);
 }
 function isReady() {
-  return _rdy.items && _rdy.transactions && _rdy.finances;
+  return _rdy.items && _rdy.transactions && _rdy.finances && _rdy.menuItems && _rdy.salesSessions;
 }
 
 // ══════════════════════════════════════════════════════
 //  FIREBASE LISTENERS
 // ══════════════════════════════════════════════════════
 function initListeners() {
-  ['items','transactions','finances'].forEach(key => {
+  ['items','transactions','finances','menuItems','salesSessions'].forEach(key => {
     db.ref(key).on('value', snap => {
       _st[key] = snap.val() || {};
       _rdy[key] = true;
@@ -839,6 +979,8 @@ function renderAll() {
   renderItems();
   renderTransactions();
   renderFinances();
+  renderMenu();
+  renderDailyRecap();
   populateStockItemSelect();
 }
 
@@ -1669,6 +1811,365 @@ function showToast(msg, type = 'info') {
   el.textContent = msg;
   c.appendChild(el);
   setTimeout(() => el.remove(), 3400);
+}
+
+// ══════════════════════════════════════════════════════
+//  MENU BUILDER
+// ══════════════════════════════════════════════════════
+let editingMenuItemId = null;
+let menuIngredients = []; // { itemId, itemName, servingsUsed }
+
+function openMenuItemModal(id = null) {
+  editingMenuItemId = id;
+  menuIngredients = [];
+  document.getElementById('menu-item-modal-title').textContent = id ? 'Edit Menu Item' : 'New Menu Item';
+  if (id) {
+    const mi = getData('menuItems').find(m => m.id === id);
+    if (!mi) return;
+    document.getElementById('menu-item-name').value = mi.name || '';
+    document.getElementById('menu-item-price').value = mi.salePrice || '';
+    menuIngredients = (mi.ingredients || []).map(ing => ({ ...ing }));
+  } else {
+    document.getElementById('menu-item-name').value = '';
+    document.getElementById('menu-item-price').value = '';
+  }
+  renderIngredientRows();
+  openModal('menu-item-modal-backdrop');
+}
+
+function renderIngredientRows() {
+  const container = document.getElementById('ingredient-rows');
+  const items = getData('items');
+  if (!menuIngredients.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No ingredients yet — click "+ Add Ingredient" below.</div>';
+    return;
+  }
+  container.innerHTML = menuIngredients.map((ing, idx) => `
+    <div class="ingredient-row">
+      <select class="ing-item-select" onchange="onIngItemChange(${idx},this)">
+        <option value="">— Select inventory item —</option>
+        ${items.map(i => `<option value="${i.id}" ${i.id===ing.itemId?'selected':''}>${esc(i.name)} (${esc(i.unit)})</option>`).join('')}
+      </select>
+      <div class="ing-srv-wrap">
+        <input type="number" value="${ing.servingsUsed||''}" placeholder="0" min="0" step="0.5"
+          oninput="onIngSrvChange(${idx},this)"
+          style="width:72px;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px">
+        <span style="font-size:12px;color:var(--text-muted)">${getIngUnitLabel(ing)}</span>
+      </div>
+      <button class="btn btn-danger btn-sm" type="button" onclick="removeIngredient(${idx})" style="padding:5px 9px">✕</button>
+    </div>
+  `).join('');
+}
+
+function getIngUnitLabel(ing) {
+  if (!ing.itemId) return 'servings / portion';
+  const item = getData('items').find(i => i.id === ing.itemId);
+  return item ? `srv / ${item.unit.toLowerCase()}` : 'servings';
+}
+
+function onIngItemChange(idx, sel) {
+  menuIngredients[idx].itemId = sel.value;
+  const item = getData('items').find(i => i.id === sel.value);
+  menuIngredients[idx].itemName = item ? item.name : '';
+  renderIngredientRows();
+}
+
+function onIngSrvChange(idx, input) {
+  menuIngredients[idx].servingsUsed = parseFloat(input.value) || 0;
+}
+
+function addIngredient() {
+  menuIngredients.push({ itemId: '', itemName: '', servingsUsed: 0 });
+  renderIngredientRows();
+}
+
+function removeIngredient(idx) {
+  menuIngredients.splice(idx, 1);
+  renderIngredientRows();
+}
+
+function saveMenuItem() {
+  const name = document.getElementById('menu-item-name').value.trim();
+  if (!name) { showToast('Menu item name is required.', 'error'); return; }
+  const price = parseFloat(document.getElementById('menu-item-price').value) || 0;
+  const validIng = menuIngredients.filter(ing => ing.itemId && ing.servingsUsed > 0);
+  if (!validIng.length) { showToast('Add at least one ingredient with servings > 0.', 'error'); return; }
+
+  const now = new Date().toISOString();
+  const data = { name, salePrice: price, ingredients: validIng };
+  if (editingMenuItemId) {
+    db.ref('menuItems/' + editingMenuItemId).update({ ...data, updatedAt: now })
+      .then(() => showToast('Menu item updated.', 'success'))
+      .catch(e => showToast('Save error: ' + e.message, 'error'));
+  } else {
+    const id = uuid();
+    db.ref('menuItems/' + id).set({ ...data, id, createdAt: now })
+      .then(() => showToast('Menu item added!', 'success'))
+      .catch(e => showToast('Save error: ' + e.message, 'error'));
+  }
+  closeModal('menu-item-modal-backdrop');
+}
+
+function deleteMenuItem(id) {
+  const mi = getData('menuItems').find(m => m.id === id);
+  if (!mi) return;
+  document.getElementById('confirm-msg').textContent = `Delete menu item "${mi.name}"? This cannot be undone.`;
+  document.getElementById('confirm-btn').onclick = () => {
+    db.ref('menuItems/' + id).remove();
+    closeModal('confirm-modal-backdrop');
+    showToast(`"${mi.name}" deleted.`, 'info');
+  };
+  openModal('confirm-modal-backdrop');
+}
+
+function renderMenu() {
+  const menuItems = getData('menuItems');
+  const invItems = getData('items');
+  const tbody = document.getElementById('menu-table-body');
+  if (!tbody) return;
+  if (!menuItems.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No menu items yet. <button class="btn btn-primary btn-sm" onclick="openMenuItemModal()">Build your first menu item</button></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = menuItems.map(mi => {
+    const ings = mi.ingredients || [];
+    // Estimate cost per item from ingredients
+    const costPerItem = ings.reduce((sum, ing) => {
+      const inv = invItems.find(i => i.id === ing.itemId);
+      if (!inv || !inv.servingsPerUnit) return sum;
+      return sum + (ing.servingsUsed / inv.servingsPerUnit) * (inv.unitCost || 0);
+    }, 0);
+    const margin = (mi.salePrice > 0 && costPerItem >= 0)
+      ? ((mi.salePrice - costPerItem) / mi.salePrice * 100).toFixed(0) + '%'
+      : '—';
+    const marginColor = parseFloat(margin) >= 0 ? 'text-success' : 'text-danger';
+    return `<tr>
+      <td><strong>${esc(mi.name)}</strong></td>
+      <td>${mi.salePrice > 0 ? '$'+mi.salePrice.toFixed(2) : '<span class="text-muted">—</span>'}</td>
+      <td>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${ings.map(ing => {
+            const inv = invItems.find(i => i.id === ing.itemId);
+            const lbl = ing.itemName || (inv ? inv.name : '?');
+            return `<span class="chip">${esc(lbl)} × ${ing.servingsUsed} srv</span>`;
+          }).join('')}
+        </div>
+      </td>
+      <td class="bold">$${costPerItem.toFixed(2)}</td>
+      <td class="${marginColor} bold">${margin}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openMenuItemModal('${mi.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMenuItem('${mi.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  DAILY RECAP
+// ══════════════════════════════════════════════════════
+let recapLines = {}; // menuItemId → qty
+
+function openRecapModal() {
+  recapLines = {};
+  document.getElementById('recap-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('recap-note').value = '';
+  renderRecapLineItems();
+  document.getElementById('recap-preview').style.display = 'none';
+  openModal('recap-modal-backdrop');
+}
+
+function renderRecapLineItems() {
+  const menuItems = getData('menuItems');
+  const container = document.getElementById('recap-line-items');
+  if (!menuItems.length) {
+    container.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:16px;text-align:center">
+      No menu items defined. <a href="#" onclick="closeModal('recap-modal-backdrop');switchTab('menu')" style="color:var(--primary-light)">Build your menu first →</a>
+    </div>`;
+    return;
+  }
+  container.innerHTML = menuItems.map(mi => `
+    <div class="recap-line-row">
+      <div class="recap-line-name">
+        <strong>${esc(mi.name)}</strong>
+        ${mi.salePrice > 0 ? `<span class="text-muted" style="font-size:11px"> · $${mi.salePrice.toFixed(2)} each</span>` : ''}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+          ${(mi.ingredients||[]).map(ing => `${esc(ing.itemName||'?')} × ${ing.servingsUsed} srv`).join(' &nbsp;+&nbsp; ')}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="recap-qty-${mi.id}" value="" placeholder="0" min="0" step="1"
+          oninput="onRecapQtyChange('${mi.id}',this)"
+          style="width:80px;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px">
+        <span class="text-muted" style="font-size:12px">sold</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function onRecapQtyChange(menuItemId, input) {
+  const qty = parseInt(input.value) || 0;
+  if (qty > 0) recapLines[menuItemId] = qty;
+  else delete recapLines[menuItemId];
+  calcRecapPreview();
+}
+
+function calcRecapPreview() {
+  const preview = document.getElementById('recap-preview');
+  const menuItems = getData('menuItems');
+  const invItems = getData('items');
+  let totalRevenue = 0, totalCost = 0, totalQty = 0;
+
+  for (const [menuItemId, qty] of Object.entries(recapLines)) {
+    const mi = menuItems.find(m => m.id === menuItemId);
+    if (!mi || qty <= 0) continue;
+    totalQty += qty;
+    totalRevenue += qty * (mi.salePrice || 0);
+    for (const ing of (mi.ingredients || [])) {
+      const inv = invItems.find(i => i.id === ing.itemId);
+      if (!inv || !inv.servingsPerUnit) continue;
+      const unitsUsed = (qty * ing.servingsUsed) / inv.servingsPerUnit;
+      totalCost += unitsUsed * (inv.unitCost || 0);
+    }
+  }
+
+  if (!totalQty) { preview.style.display = 'none'; return; }
+  const profit = totalRevenue - totalCost;
+  document.getElementById('recap-prev-qty').textContent = totalQty + ' items';
+  document.getElementById('recap-prev-rev').textContent = '$' + totalRevenue.toFixed(2);
+  document.getElementById('recap-prev-cost').textContent = '$' + totalCost.toFixed(2);
+  document.getElementById('recap-prev-profit').textContent = '$' + profit.toFixed(2);
+  document.getElementById('recap-prev-profit').style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
+  preview.style.display = '';
+}
+
+function submitRecap() {
+  const date = document.getElementById('recap-date').value;
+  if (!date) { showToast('Please select a date.', 'error'); return; }
+  const lines = Object.entries(recapLines).filter(([,qty]) => qty > 0);
+  if (!lines.length) { showToast('Enter at least one item sold.', 'error'); return; }
+
+  const menuItems = getData('menuItems');
+  const invItems = getData('items');
+  const now = new Date().toISOString();
+  const note = document.getElementById('recap-note').value.trim();
+  const writes = [];
+  let totalRevenue = 0, totalCost = 0;
+  const sessionLines = [];
+
+  for (const [menuItemId, qty] of lines) {
+    const mi = menuItems.find(m => m.id === menuItemId);
+    if (!mi) continue;
+    const lineRevenue = qty * (mi.salePrice || 0);
+    totalRevenue += lineRevenue;
+    let lineCost = 0;
+
+    // Deduct ingredients from inventory
+    for (const ing of (mi.ingredients || [])) {
+      const inv = invItems.find(i => i.id === ing.itemId);
+      if (!inv) continue;
+      const spu = inv.servingsPerUnit || 0;
+      const totalServings = qty * ing.servingsUsed;
+      const unitsDeducted = spu > 0 ? totalServings / spu : 0;
+      const ingCost = unitsDeducted * (inv.unitCost || 0);
+      lineCost += ingCost;
+      totalCost += ingCost;
+
+      if (unitsDeducted > 0) {
+        const newStock = (inv.currentStock || 0) - unitsDeducted;
+        writes.push(db.ref('items/' + inv.id).update({ currentStock: newStock }));
+        const txId = uuid();
+        writes.push(db.ref('transactions/' + txId).set({
+          id: txId, date,
+          itemId: inv.id, itemName: inv.name,
+          type: 'out',
+          qty: unitsDeducted, servings: totalServings,
+          unitCost: inv.unitCost || 0,
+          totalCost: ingCost,
+          note: `Daily Recap: ${mi.name} × ${qty}${note ? ' · ' + note : ''}`,
+          source: 'daily-recap',
+          createdAt: now
+        }));
+      }
+    }
+
+    // Log revenue per menu item to Finances
+    if (lineRevenue > 0) {
+      const finId = uuid();
+      writes.push(db.ref('finances/' + finId).set({
+        id: finId, date,
+        type: 'income', category: 'Food Sales',
+        description: `${mi.name} × ${qty}${note ? ' — ' + note : ''}`,
+        amount: lineRevenue, createdAt: now
+      }));
+    }
+
+    sessionLines.push({ menuItemId, menuItemName: mi.name, qty, revenue: lineRevenue, cost: lineCost });
+  }
+
+  // Save session summary
+  const sessionId = uuid();
+  writes.push(db.ref('salesSessions/' + sessionId).set({
+    id: sessionId, date, note,
+    lines: sessionLines,
+    totalRevenue, totalCost,
+    grossProfit: totalRevenue - totalCost,
+    createdAt: now
+  }));
+
+  Promise.all(writes)
+    .then(() => {
+      closeModal('recap-modal-backdrop');
+      showToast(`✅ Recap saved! $${totalRevenue.toFixed(2)} revenue · $${(totalRevenue - totalCost).toFixed(2)} profit.`, 'success');
+    })
+    .catch(e => showToast('Error saving recap: ' + e.message, 'error'));
+}
+
+function renderDailyRecap() {
+  const sessions = getData('salesSessions').sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('recap-history-body');
+  if (!tbody) return;
+  if (!sessions.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No daily recaps yet. <button class="btn btn-primary btn-sm" onclick="openRecapModal()">Log your first day</button></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sessions.map(s => {
+    const lines = s.lines || [];
+    const profitColor = (s.grossProfit||0) >= 0 ? 'text-success' : 'text-danger';
+    return `<tr>
+      <td>${fmtDate(s.date)}</td>
+      <td class="text-muted">${esc(s.note||'—')}</td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:4px">${lines.map(l => `<span class="chip">${esc(l.menuItemName)} × ${l.qty}</span>`).join('')}</div></td>
+      <td class="text-success bold">$${(s.totalRevenue||0).toFixed(2)}</td>
+      <td class="text-danger">$${(s.totalCost||0).toFixed(2)}</td>
+      <td class="${profitColor} bold">$${(s.grossProfit||0).toFixed(2)}</td>
+      <td><button class="btn btn-danger btn-icon btn-sm" onclick="deleteRecap('${s.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteRecap(id) {
+  const s = getData('salesSessions').find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('confirm-msg').textContent =
+    `Delete daily recap for ${fmtDate(s.date)}? Note: inventory deductions from this recap will NOT be automatically reversed.`;
+  document.getElementById('confirm-btn').onclick = () => {
+    db.ref('salesSessions/' + id).remove();
+    closeModal('confirm-modal-backdrop');
+    showToast('Daily recap deleted.', 'info');
+  };
+  openModal('confirm-modal-backdrop');
+}
+
+function switchTab(tabName) {
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+  const panel = document.getElementById('panel-' + tabName);
+  if (panel) panel.classList.add('active');
 }
 
 // ══════════════════════════════════════════════════════
