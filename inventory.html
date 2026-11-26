@@ -234,10 +234,24 @@
   @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 
   /* ── INGREDIENT ROWS (menu builder) ── */
+  .mod-toggle-row{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12px;background:var(--surface-3);border-radius:var(--radius);border:1px solid var(--border-light)}
+  .mod-toggle-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--warning,#f59e0b)}
   .ingredient-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
   .ingredient-row:last-child{border-bottom:none}
   .ingredient-row .ing-item-select{flex:1;min-width:0}
   .ing-srv-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .addon-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .addon-row:last-child{border-bottom:none}
+  .addon-row .ing-item-select{flex:1;min-width:140px}
+  .addon-price-wrap{display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .addon-price-wrap span{font-size:13px;color:var(--text-muted)}
+  .addon-price-wrap input[type=number]{width:72px;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px}
+  .combo-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
+  .combo-row:last-child{border-bottom:none}
+  .combo-row select{flex:1;min-width:0}
+  .combo-qty-wrap{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .combo-qty-wrap input[type=number]{width:56px;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px}
+  .combo-qty-wrap span{font-size:12px;color:var(--text-muted)}
 
   /* ── RECAP LINE ROWS ── */
   .recap-line-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
@@ -826,6 +840,52 @@
           <div class="form-hint" style="margin:8px 0">How many servings of each inventory item goes into <em>one</em> portion of this menu item.</div>
           <div id="ingredient-rows" style="margin-bottom:12px"></div>
           <button class="btn btn-ghost btn-sm" type="button" onclick="addIngredient()">+ Add Ingredient</button>
+        </div>
+        <div>
+          <div class="section-divider">Ingredient Availability</div>
+          <div class="form-hint" style="margin:8px 0">Flag this item when an ingredient is unavailable or limited — it stays on the menu but shows a substitution prompt when ordered.</div>
+          <label class="mod-toggle-row">
+            <input type="checkbox" id="menu-item-mod-flag" onchange="toggleModFields(this.checked)">
+            <span>⚠️ Flag ingredient issue</span>
+          </label>
+          <div id="mod-fields" style="display:none;margin-top:12px">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>What's unavailable?</label>
+              <input type="text" id="menu-item-mod-note" placeholder="e.g. No sesame buns — out of stock">
+            </div>
+            <div class="form-group">
+              <label>Substitution options <span style="font-weight:400;color:var(--text-muted)">(one per line)</span></label>
+              <textarea id="menu-item-mod-options" rows="4" placeholder="Wheat bun&#10;Lettuce wrap&#10;No bun&#10;Gluten-free bun" style="width:100%;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+              <div class="form-hint">Customer will choose one of these when ordering, or skip the sub.</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-divider">Add-Ons</div>
+          <div class="form-hint" style="margin:8px 0">Optional extras the order station can add to this item. Pick the inventory item used, how many servings it takes, and the upcharge — stock is deducted automatically whenever a customer orders it.</div>
+          <div id="addon-rows" style="margin-bottom:12px"></div>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="addAddOn()">+ Add Add-On</button>
+        </div>
+        <div>
+          <div class="section-divider">Combo</div>
+          <div class="form-hint" style="margin:8px 0">Offer this item as a combo. When available, the order station lets staff choose, per order, whether the customer wants it as a combo — bundling in other items at a combo price.</div>
+          <div class="form-group">
+            <label>Available as a combo?</label>
+            <select id="menu-item-is-combo" onchange="toggleComboFields(this.value==='yes')">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div id="combo-fields" style="display:none;margin-top:12px">
+            <div class="form-group" style="margin-bottom:10px">
+              <label>Combo Price ($)</label>
+              <div class="input-prefix"><span>$</span><input type="number" id="menu-item-combo-price" placeholder="0.00" min="0" step="0.01"></div>
+              <div class="form-hint">Total price when ordered as a combo (replaces the regular sale price for that order).</div>
+            </div>
+            <div class="form-hint" style="margin-bottom:8px">Items included when ordered as a combo:</div>
+            <div id="combo-rows" style="margin-bottom:12px"></div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="addComboItem()">+ Add Included Item</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1818,10 +1878,14 @@ function showToast(msg, type = 'info') {
 // ══════════════════════════════════════════════════════
 let editingMenuItemId = null;
 let menuIngredients = []; // { itemId, itemName, servingsUsed }
+let menuAddOns = []; // { name, price }
+let menuComboItems = []; // { menuItemId, name, qty }
 
 function openMenuItemModal(id = null) {
   editingMenuItemId = id;
   menuIngredients = [];
+  menuAddOns = [];
+  menuComboItems = [];
   document.getElementById('menu-item-modal-title').textContent = id ? 'Edit Menu Item' : 'New Menu Item';
   if (id) {
     const mi = getData('menuItems').find(m => m.id === id);
@@ -1829,12 +1893,43 @@ function openMenuItemModal(id = null) {
     document.getElementById('menu-item-name').value = mi.name || '';
     document.getElementById('menu-item-price').value = mi.salePrice || '';
     menuIngredients = (mi.ingredients || []).map(ing => ({ ...ing }));
+    // mod fields
+    const flag = !!mi.modFlag;
+    document.getElementById('menu-item-mod-flag').checked = flag;
+    document.getElementById('menu-item-mod-note').value = mi.modNote || '';
+    document.getElementById('menu-item-mod-options').value = (mi.modOptions || []).join('\n');
+    toggleModFields(flag);
+    // add-ons
+    menuAddOns = (mi.addOns || []).map(a => ({ ...a }));
+    // combo
+    const combo = !!mi.isCombo;
+    document.getElementById('menu-item-is-combo').value = combo ? 'yes' : 'no';
+    document.getElementById('menu-item-combo-price').value = mi.comboPrice || '';
+    menuComboItems = (mi.comboItems || []).map(c => ({ ...c }));
+    toggleComboFields(combo);
   } else {
     document.getElementById('menu-item-name').value = '';
     document.getElementById('menu-item-price').value = '';
+    document.getElementById('menu-item-mod-flag').checked = false;
+    document.getElementById('menu-item-mod-note').value = '';
+    document.getElementById('menu-item-mod-options').value = '';
+    toggleModFields(false);
+    document.getElementById('menu-item-is-combo').value = 'no';
+    document.getElementById('menu-item-combo-price').value = '';
+    toggleComboFields(false);
   }
   renderIngredientRows();
+  renderAddOnRows();
+  renderComboRows();
   openModal('menu-item-modal-backdrop');
+}
+
+function toggleModFields(visible) {
+  document.getElementById('mod-fields').style.display = visible ? 'block' : 'none';
+}
+
+function toggleComboFields(visible) {
+  document.getElementById('combo-fields').style.display = visible ? 'block' : 'none';
 }
 
 function renderIngredientRows() {
@@ -1888,6 +1983,114 @@ function removeIngredient(idx) {
   renderIngredientRows();
 }
 
+// ══════════════════════════════════════════════════════
+//  ADD-ONS
+// ══════════════════════════════════════════════════════
+function renderAddOnRows() {
+  const container = document.getElementById('addon-rows');
+  const items = getData('items');
+  if (!menuAddOns.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No add-ons yet — click "+ Add Add-On" below.</div>';
+    return;
+  }
+  container.innerHTML = menuAddOns.map((a, idx) => `
+    <div class="addon-row">
+      <select class="ing-item-select" onchange="onAddOnItemChange(${idx},this)">
+        <option value="">— Select inventory item —</option>
+        ${items.map(i => `<option value="${i.id}" ${i.id===a.itemId?'selected':''}>${esc(i.name)} (${esc(i.unit)})</option>`).join('')}
+      </select>
+      <div class="ing-srv-wrap">
+        <input type="number" value="${a.servingsUsed||''}" placeholder="1" min="0" step="0.5"
+          oninput="onAddOnSrvChange(${idx},this)"
+          style="width:64px;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:7px 10px;font-size:13px">
+        <span style="font-size:11px;color:var(--text-muted)">${getAddOnUnitLabel(a)}</span>
+      </div>
+      <div class="addon-price-wrap">
+        <span>+$</span>
+        <input type="number" value="${a.price||''}" placeholder="0.00" min="0" step="0.25" oninput="onAddOnPriceChange(${idx},this)">
+      </div>
+      <button class="btn btn-danger btn-sm" type="button" onclick="removeAddOn(${idx})" style="padding:5px 9px">✕</button>
+    </div>
+  `).join('');
+}
+
+function getAddOnUnitLabel(a) {
+  if (!a.itemId) return 'srv / order';
+  const item = getData('items').find(i => i.id === a.itemId);
+  return item ? `srv / ${item.unit.toLowerCase()}` : 'srv / order';
+}
+
+function onAddOnItemChange(idx, sel) {
+  menuAddOns[idx].itemId = sel.value;
+  const item = getData('items').find(i => i.id === sel.value);
+  menuAddOns[idx].name = item ? item.name : '';
+  renderAddOnRows();
+}
+
+function onAddOnSrvChange(idx, input) {
+  menuAddOns[idx].servingsUsed = parseFloat(input.value) || 0;
+}
+
+function onAddOnPriceChange(idx, input) {
+  menuAddOns[idx].price = parseFloat(input.value) || 0;
+}
+
+function addAddOn() {
+  menuAddOns.push({ itemId: '', name: '', servingsUsed: 1, price: 0 });
+  renderAddOnRows();
+}
+
+function removeAddOn(idx) {
+  menuAddOns.splice(idx, 1);
+  renderAddOnRows();
+}
+
+// ══════════════════════════════════════════════════════
+//  COMBO ITEMS
+// ══════════════════════════════════════════════════════
+function renderComboRows() {
+  const container = document.getElementById('combo-rows');
+  // Exclude self and other combos (avoid nested combos) from selectable options
+  const options = getData('menuItems').filter(m => m.id !== editingMenuItemId && !m.isCombo);
+  if (!menuComboItems.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No included items yet — click "+ Add Included Item" below.</div>';
+    return;
+  }
+  container.innerHTML = menuComboItems.map((c, idx) => `
+    <div class="combo-row">
+      <select onchange="onComboItemChange(${idx},this)">
+        <option value="">— Select menu item —</option>
+        ${options.map(m => `<option value="${m.id}" ${m.id===c.menuItemId?'selected':''}>${esc(m.name)}</option>`).join('')}
+      </select>
+      <div class="combo-qty-wrap">
+        <input type="number" value="${c.qty||1}" min="1" step="1" oninput="onComboQtyChange(${idx},this)">
+        <span>qty</span>
+      </div>
+      <button class="btn btn-danger btn-sm" type="button" onclick="removeComboItem(${idx})" style="padding:5px 9px">✕</button>
+    </div>
+  `).join('');
+}
+
+function onComboItemChange(idx, sel) {
+  menuComboItems[idx].menuItemId = sel.value;
+  const mi = getData('menuItems').find(m => m.id === sel.value);
+  menuComboItems[idx].name = mi ? mi.name : '';
+}
+
+function onComboQtyChange(idx, input) {
+  menuComboItems[idx].qty = Math.max(1, parseInt(input.value) || 1);
+}
+
+function addComboItem() {
+  menuComboItems.push({ menuItemId: '', name: '', qty: 1 });
+  renderComboRows();
+}
+
+function removeComboItem(idx) {
+  menuComboItems.splice(idx, 1);
+  renderComboRows();
+}
+
 function saveMenuItem() {
   const name = document.getElementById('menu-item-name').value.trim();
   if (!name) { showToast('Menu item name is required.', 'error'); return; }
@@ -1895,8 +2098,20 @@ function saveMenuItem() {
   const validIng = menuIngredients.filter(ing => ing.itemId && ing.servingsUsed > 0);
   if (!validIng.length) { showToast('Add at least one ingredient with servings > 0.', 'error'); return; }
 
+  const modFlag = document.getElementById('menu-item-mod-flag').checked;
+  const modNote = modFlag ? document.getElementById('menu-item-mod-note').value.trim() : '';
+  const modOptions = modFlag
+    ? document.getElementById('menu-item-mod-options').value.split('\n').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  const addOns = menuAddOns.filter(a => a.itemId);
+
+  const isCombo = document.getElementById('menu-item-is-combo').value === 'yes';
+  const comboPrice = isCombo ? (parseFloat(document.getElementById('menu-item-combo-price').value) || 0) : 0;
+  const comboItems = isCombo ? menuComboItems.filter(c => c.menuItemId) : [];
+
   const now = new Date().toISOString();
-  const data = { name, salePrice: price, ingredients: validIng };
+  const data = { name, salePrice: price, ingredients: validIng, modFlag, modNote, modOptions, addOns, isCombo, comboPrice, comboItems };
   if (editingMenuItemId) {
     db.ref('menuItems/' + editingMenuItemId).update({ ...data, updatedAt: now })
       .then(() => showToast('Menu item updated.', 'success'))
@@ -1933,18 +2148,39 @@ function renderMenu() {
   }
   tbody.innerHTML = menuItems.map(mi => {
     const ings = mi.ingredients || [];
-    // Estimate cost per item from ingredients
-    const costPerItem = ings.reduce((sum, ing) => {
-      const inv = invItems.find(i => i.id === ing.itemId);
-      if (!inv || !inv.servingsPerUnit) return sum;
-      return sum + (ing.servingsUsed / inv.servingsPerUnit) * (inv.unitCost || 0);
-    }, 0);
+    const combos = mi.isCombo ? (mi.comboItems || []) : [];
+    // Base cost/margin: this item's own ingredients only — combo is an optional
+    // per-order upsell, not a guaranteed part of every sale.
+    const costPerItem = ingredientCost(ings, invItems);
     const margin = (mi.salePrice > 0 && costPerItem >= 0)
       ? ((mi.salePrice - costPerItem) / mi.salePrice * 100).toFixed(0) + '%'
       : '—';
     const marginColor = parseFloat(margin) >= 0 ? 'text-success' : 'text-danger';
+    // Combo cost/margin: own + included items' ingredients, priced at comboPrice
+    let comboLine = '';
+    if (combos.length) {
+      const comboCost = ingredientCost(getEffectiveIngredients(mi, menuItems), invItems);
+      const comboPrice = mi.comboPrice || 0;
+      const comboMargin = (comboPrice > 0)
+        ? ((comboPrice - comboCost) / comboPrice * 100).toFixed(0) + '%'
+        : '—';
+      const comboMarginColor = parseFloat(comboMargin) >= 0 ? 'text-success' : 'text-danger';
+      comboLine = `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+        🍱 Combo: ${comboPrice>0?'$'+comboPrice.toFixed(2):'<span class="text-muted">no price set</span>'}
+        · cost $${comboCost.toFixed(2)} · <span class="${comboMarginColor}">${comboMargin}</span> margin
+        · Includes: ${combos.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}
+      </div>`;
+    }
+    const addOns = mi.addOns || [];
     return `<tr>
-      <td><strong>${esc(mi.name)}</strong></td>
+      <td>
+        <strong>${esc(mi.name)}</strong>
+        ${mi.modFlag ? `<span class="chip" style="background:rgba(245,158,11,.18);color:#d97706;border:1px solid rgba(245,158,11,.35);font-size:11px;margin-left:6px">⚠️ Mod</span>` : ''}
+        ${mi.isCombo ? `<span class="chip" style="background:rgba(59,181,106,.18);color:var(--success);border:1px solid rgba(59,181,106,.35);font-size:11px;margin-left:6px">🍱 Combo available</span>` : ''}
+        ${addOns.length ? `<span class="chip" style="background:rgba(99,102,241,.18);color:#818cf8;border:1px solid rgba(99,102,241,.35);font-size:11px;margin-left:6px">+ ${addOns.length} Add-On${addOns.length>1?'s':''}</span>` : ''}
+        ${comboLine}
+        ${addOns.length ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px">Add-ons: ${addOns.map(a=>esc(a.name)+' +$'+(a.price||0).toFixed(2)).join(', ')}</div>` : ''}
+      </td>
       <td>${mi.salePrice > 0 ? '$'+mi.salePrice.toFixed(2) : '<span class="text-muted">—</span>'}</td>
       <td>
         <div style="display:flex;flex-wrap:wrap;gap:4px">
@@ -1965,6 +2201,31 @@ function renderMenu() {
       </td>
     </tr>`;
   }).join('');
+}
+
+function ingredientCost(ings, invItems) {
+  return (ings || []).reduce((sum, ing) => {
+    const inv = invItems.find(i => i.id === ing.itemId);
+    if (!inv || !inv.servingsPerUnit) return sum;
+    return sum + (ing.servingsUsed / inv.servingsPerUnit) * (inv.unitCost || 0);
+  }, 0);
+}
+
+// Flattens a menu item's own ingredients plus (for combos) the ingredients of
+// each included item, scaled by the included item's combo qty. Used anywhere
+// inventory needs to be costed or deducted for a sale of this menu item.
+function getEffectiveIngredients(mi, allMenuItems) {
+  const own = (mi.ingredients || []).map(ing => ({ ...ing }));
+  if (!mi.isCombo) return own;
+  const combined = [...own];
+  (mi.comboItems || []).forEach(c => {
+    const incl = allMenuItems.find(m => m.id === c.menuItemId);
+    if (!incl) return;
+    (incl.ingredients || []).forEach(ing => {
+      combined.push({ ...ing, servingsUsed: ing.servingsUsed * (c.qty || 1) });
+    });
+  });
+  return combined;
 }
 
 // ══════════════════════════════════════════════════════
@@ -2027,6 +2288,9 @@ function calcRecapPreview() {
     if (!mi || qty <= 0) continue;
     totalQty += qty;
     totalRevenue += qty * (mi.salePrice || 0);
+    // Combo is an optional per-order upsell now, tracked by the order station —
+    // the recap's flat quantity can't tell combo sales from à la carte ones, so
+    // only this item's own ingredients are deducted here.
     for (const ing of (mi.ingredients || [])) {
       const inv = invItems.find(i => i.id === ing.itemId);
       if (!inv || !inv.servingsPerUnit) continue;
@@ -2066,7 +2330,8 @@ function submitRecap() {
     totalRevenue += lineRevenue;
     let lineCost = 0;
 
-    // Deduct ingredients from inventory
+    // Deduct this item's own ingredients only — combo contents are deducted
+    // in real time by the order station when a combo is actually selected.
     for (const ing of (mi.ingredients || [])) {
       const inv = invItems.find(i => i.id === ing.itemId);
       if (!inv) continue;
