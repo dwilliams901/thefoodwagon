@@ -145,6 +145,9 @@ html,body{
   min-width:36px;flex-shrink:0;line-height:1;
 }
 .item-name{font-size:17px;font-weight:600;line-height:1.3}
+.item-mod{font-size:12px;font-weight:600;color:#34d399;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:5px;padding:2px 7px;margin-top:3px;display:inline-block}
+.item-addon{font-size:12px;font-weight:600;color:#a5b4fc;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;margin-top:3px;display:inline-block}
+.item-combo{font-size:12px;color:var(--text-muted);margin-top:3px}
 
 /* Customer name */
 .card-name{
@@ -484,12 +487,21 @@ function renderOrders(){
     const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
     const payLabel = (o.paymentMethod||'').toUpperCase();
 
-    const itemRows = (o.items||[]).map(i =>
-      `<div class="card-item-row">
+    const itemRows = (o.items||[]).map(i => {
+      const addOnsHtml = (i.addOns && i.addOns.length)
+        ? `<div class="item-addon">↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}</div>` : '';
+      const comboHtml = (i.comboIncludes && i.comboIncludes.length)
+        ? `<div class="item-combo">↳ Includes: ${i.comboIncludes.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}</div>` : '';
+      return `<div class="card-item-row">
         <span class="item-qty">${i.qty}</span>
-        <span class="item-name">${esc(i.menuItemName)}</span>
-      </div>`
-    ).join('');
+        <div>
+          <span class="item-name">${esc(i.menuItemName)}</span>
+          ${i.mod?`<div class="item-mod">↳ Sub: ${esc(i.mod)}</div>`:''}
+          ${addOnsHtml}
+          ${comboHtml}
+        </div>
+      </div>`;
+    }).join('');
 
     const noteHtml = o.note
       ? `<div class="card-note">📝 ${esc(o.note)}</div>`
@@ -546,12 +558,17 @@ function tapOrder(orderId){
 
   document.getElementById('confirm-num').textContent = '#' + pad(order.orderNumber);
 
-  const rows = (order.items||[]).map(i =>
-    `<div class="confirm-item-row">
+  const rows = (order.items||[]).map(i => {
+    const extras = [];
+    if (i.mod) extras.push(`↳ Sub: ${esc(i.mod)}`);
+    if (i.addOns && i.addOns.length) extras.push(`↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}`);
+    if (i.comboIncludes && i.comboIncludes.length) extras.push(`↳ Includes: ${i.comboIncludes.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}`);
+    return `<div class="confirm-item-row" style="flex-wrap:wrap">
       <span class="confirm-item-qty">${i.qty}</span>
       <span class="confirm-item-name">${esc(i.menuItemName)}</span>
-    </div>`
-  ).join('');
+      ${extras.length?`<div style="width:100%;font-size:12px;color:var(--text-muted);padding-left:38px">${extras.join('<br>')}</div>`:''}
+    </div>`;
+  }).join('');
   document.getElementById('confirm-items').innerHTML = rows;
 
   // Show name in modal title if present
