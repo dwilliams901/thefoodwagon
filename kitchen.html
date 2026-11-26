@@ -491,11 +491,14 @@ function renderOrders(){
       const addOnsHtml = (i.addOns && i.addOns.length)
         ? `<div class="item-addon">↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}</div>` : '';
       const comboHtml = (i.comboIncludes && i.comboIncludes.length)
-        ? `<div class="item-combo">↳ Includes: ${i.comboIncludes.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}</div>` : '';
+        ? `<div class="item-combo">↳ Includes: ${i.comboIncludes.map(c=>{
+            const flavorText = (c.flavors && c.flavors.length) ? ' ('+c.flavors.map(esc).join(', ')+')' : '';
+            return esc(c.name)+(c.qty>1?' ×'+c.qty:'')+flavorText;
+          }).join(', ')}</div>` : '';
       return `<div class="card-item-row">
         <span class="item-qty">${i.qty}</span>
         <div>
-          <span class="item-name">${esc(i.menuItemName)}</span>
+          <span class="item-name">${esc(i.menuItemName)}${i.flavor?' — '+esc(i.flavor):''}</span>
           ${i.mod?`<div class="item-mod">↳ Sub: ${esc(i.mod)}</div>`:''}
           ${addOnsHtml}
           ${comboHtml}
@@ -562,10 +565,13 @@ function tapOrder(orderId){
     const extras = [];
     if (i.mod) extras.push(`↳ Sub: ${esc(i.mod)}`);
     if (i.addOns && i.addOns.length) extras.push(`↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}`);
-    if (i.comboIncludes && i.comboIncludes.length) extras.push(`↳ Includes: ${i.comboIncludes.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}`);
+    if (i.comboIncludes && i.comboIncludes.length) extras.push(`↳ Includes: ${i.comboIncludes.map(c=>{
+      const flavorText = (c.flavors && c.flavors.length) ? ' ('+c.flavors.map(esc).join(', ')+')' : '';
+      return esc(c.name)+(c.qty>1?' ×'+c.qty:'')+flavorText;
+    }).join(', ')}`);
     return `<div class="confirm-item-row" style="flex-wrap:wrap">
       <span class="confirm-item-qty">${i.qty}</span>
-      <span class="confirm-item-name">${esc(i.menuItemName)}</span>
+      <span class="confirm-item-name">${esc(i.menuItemName)}${i.flavor?' — '+esc(i.flavor):''}</span>
       ${extras.length?`<div style="width:100%;font-size:12px;color:var(--text-muted);padding-left:38px">${extras.join('<br>')}</div>`:''}
     </div>`;
   }).join('');
@@ -630,7 +636,7 @@ function showPreviousOrders(){
       }
 
       body.innerHTML = orders.map(o => {
-        const itemsSummary = (o.items||[]).map(i => i.qty + '× ' + i.menuItemName).join(', ');
+        const itemsSummary = (o.items||[]).map(i => i.qty + '× ' + i.menuItemName + (i.flavor?' ('+i.flavor+')':'')).join(', ');
         const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
         const payLabel = (o.paymentMethod||'').toUpperCase();
         const when = o.completedAt
