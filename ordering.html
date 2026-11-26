@@ -102,6 +102,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .order-row-total{font-size:14px;font-weight:700;flex-shrink:0}
 .order-row-time{font-size:12px;color:var(--text-muted);flex-shrink:0}
 
+/* ── MOD BADGE on menu card ── */
+.menu-card.is-mod{border-color:rgba(240,180,41,.4)}
+.menu-card.is-mod.has-qty{border-color:var(--primary)}
+.mod-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(240,180,41,.14);border:1px solid rgba(240,180,41,.35);color:#d97706;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;margin-right:4px;line-height:1.4}
+.combo-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(59,181,106,.14);border:1px solid rgba(59,181,106,.35);color:var(--success);border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;margin-right:4px;line-height:1.4}
+.addon-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.35);color:#818cf8;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;line-height:1.4}
+.menu-card-name{cursor:pointer}
+.menu-card-name:active{opacity:.7}
+.mod-sub-label{font-size:11px;color:var(--success);margin-top:4px;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.combo-includes-label{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.3}
+.cart-item-mod{font-size:11px;color:var(--success);font-style:italic;margin-top:1px}
+.cart-item-addon{font-size:11px;color:#818cf8;font-style:italic;margin-top:1px}
+.cart-item-combo{font-size:11px;color:var(--text-muted);margin-top:1px}
+
+/* ── MOD PICKER MODAL ── */
+#mod-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;align-items:flex-end;justify-content:center;padding:0}
+#mod-modal.visible{display:flex}
+.mod-modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:480px;padding:24px 20px 32px;border-top:1px solid var(--border-light);box-shadow:0 -6px 30px rgba(0,0,0,.5)}
+.mod-modal-title{font-size:17px;font-weight:800;margin-bottom:4px}
+.mod-modal-note{font-size:13px;color:var(--warning);margin-bottom:16px;line-height:1.4}
+.mod-modal-subheading{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+.mod-options-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.mod-option-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.mod-option-btn.selected{border-color:var(--success);background:rgba(59,181,106,.12);color:var(--success)}
+.mod-option-btn.skip{color:var(--text-muted);font-weight:500}
+.addon-option-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.addon-option-btn.selected{border-color:#818cf8;background:rgba(99,102,241,.12);color:#818cf8}
+.addon-option-price{font-size:13px;font-weight:700;opacity:.8}
+.mod-add-btn{width:100%;padding:16px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-lg);font-size:16px;font-weight:800;cursor:pointer;opacity:.4;transition:opacity .15s}
+.mod-add-btn.ready{opacity:1}
+
 /* ── TOAST ── */
 .toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center}
 .toast{background:var(--surface-2);border:1px solid var(--border-light);color:var(--text);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;box-shadow:var(--shadow);animation:fadeUp .22s ease;white-space:nowrap}
@@ -188,6 +219,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div id="order-history"></div>
 </div>
 
+<!-- Item Customization Modal (substitutions + add-ons) -->
+<div id="mod-modal" onclick="if(event.target.id==='mod-modal') closeCustomizeModal()">
+  <div class="mod-modal-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+      <div class="mod-modal-title" id="mod-modal-title">Customize Item</div>
+      <button onclick="closeCustomizeModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px">×</button>
+    </div>
+    <div class="mod-modal-note" id="mod-modal-note" style="display:none"></div>
+
+    <div id="mod-combo-section" style="display:none">
+      <div class="mod-modal-subheading">Make it a combo?</div>
+      <div class="mod-options-grid" id="mod-combo-grid"></div>
+    </div>
+
+    <div id="mod-sub-section" style="display:none">
+      <div class="mod-modal-subheading">Choose a substitution:</div>
+      <div class="mod-options-grid" id="mod-options-grid"></div>
+    </div>
+
+    <div id="mod-addon-section" style="display:none">
+      <div class="mod-modal-subheading">Add-ons:</div>
+      <div class="mod-options-grid" id="mod-addon-grid"></div>
+    </div>
+
+    <button class="mod-add-btn ready" id="mod-add-btn" onclick="confirmMod()">Add to Order</button>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <!-- Firebase -->
@@ -208,10 +267,16 @@ const db = firebase.database();
 
 // ── State ─────────────────────────────────────────────────
 let menuItems = [];
+let invItems = [];       // raw inventory items, for add-on stock deduction
 let cart = {};           // { menuItemId: qty }
+let cartMods = {};       // { menuItemId: substitutionString }
+let cartAddons = {};     // { menuItemId: [{itemId, name, price, servingsUsed}] }
+let cartCombo = {};      // { menuItemId: true } — customer wants the combo version
 let selectedPayment = null;
 let recentOrders = [];
 let loaded = false;
+let pendingModId = null; // menuItemId awaiting mod/add-on selection
+let pendingModChoice = null; // chosen sub string or '' for skip
 
 // ── Utils ─────────────────────────────────────────────────
 function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
@@ -236,6 +301,11 @@ db.ref('menuItems').on('value', snap => {
   }
 });
 
+// Raw inventory items — needed to deduct stock when an add-on is ordered
+db.ref('items').on('value', snap => {
+  invItems = Object.values(snap.val()||{}).filter(Boolean);
+});
+
 db.ref('orders').orderByChild('createdAt').limitToLast(25).on('value', snap => {
   recentOrders = Object.values(snap.val()||{}).filter(Boolean)
     .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
@@ -243,6 +313,20 @@ db.ref('orders').orderByChild('createdAt').limitToLast(25).on('value', snap => {
 });
 
 // ── Menu ──────────────────────────────────────────────────
+function itemNeedsCustomization(mi){
+  return !!(mi && (mi.modFlag || (mi.addOns && mi.addOns.length) || mi.isCombo));
+}
+
+// Effective per-unit price for a cart line: the combo price (if the customer
+// chose combo and one is set — falls back to the regular price otherwise),
+// plus any selected add-ons.
+function effectiveUnitPrice(mi, id){
+  if (!mi) return 0;
+  const base = (cartCombo[id] && mi.comboPrice > 0) ? mi.comboPrice : (mi.salePrice||0);
+  const addonsTotal = (cartAddons[id]||[]).reduce((s,a)=>s+(a.price||0),0);
+  return base + addonsTotal;
+}
+
 function renderMenuGrid(){
   const g = document.getElementById('menu-grid');
   if (!menuItems.length){
@@ -252,10 +336,40 @@ function renderMenuGrid(){
   g.innerHTML = menuItems.map(mi => {
     const qty = cart[mi.id]||0;
     const hasPrice = mi.salePrice > 0;
-    return `<div class="menu-card ${qty>0?'has-qty':''}" id="mc-${mi.id}">
+    const hasMod = !!mi.modFlag;
+    const addOns = mi.addOns || [];
+    const hasAddons = addOns.length > 0;
+    const comboAvailable = !!mi.isCombo;
+    const comboItems = comboAvailable ? (mi.comboItems||[]) : [];
+    const needsCustomization = itemNeedsCustomization(mi);
+    const chosenSub = cartMods[mi.id];
+    const chosenAddons = cartAddons[mi.id] || [];
+    const wantsCombo = qty > 0 && !!cartCombo[mi.id];
+
+    const subLabel = qty > 0 && hasMod && chosenSub ? `✓ Sub: ${chosenSub}` : '';
+    const addonLabel = qty > 0 && chosenAddons.length
+      ? `✓ ${chosenAddons.map(a=>a.name).join(', ')}` : '';
+    const comboLabel = wantsCombo && comboItems.length
+      ? `✓ Combo: Includes ${comboItems.map(c=>c.name+(c.qty>1?' ×'+c.qty:'')).join(', ')}` : '';
+
+    const displayPrice = (wantsCombo && mi.comboPrice > 0) ? mi.comboPrice : mi.salePrice;
+
+    const nameAttr = needsCustomization
+      ? `onclick="openCustomizeModal('${mi.id}')"`
+      : `onclick="adj('${mi.id}',1)"`;
+
+    return `<div class="menu-card ${qty>0?'has-qty':''} ${hasMod?'is-mod':''}" id="mc-${mi.id}">
       ${qty>0?`<div class="qty-badge">${qty}</div>`:''}
-      <div class="menu-card-name">${esc(mi.name)}</div>
-      <div class="menu-card-price ${hasPrice?'':'no-price'}">${hasPrice?'$'+mi.salePrice.toFixed(2):'No price'}</div>
+      ${(hasMod||comboAvailable||hasAddons)?`<div>
+        ${hasMod?`<span class="mod-badge">⚠️ Mod</span>`:''}
+        ${comboAvailable?`<span class="combo-badge">🍱 Combo available</span>`:''}
+        ${hasAddons?`<span class="addon-badge">+ Add-Ons</span>`:''}
+      </div>`:''}
+      <div class="menu-card-name" ${nameAttr}>${esc(mi.name)}</div>
+      <div class="menu-card-price ${hasPrice?'':'no-price'}">${hasPrice?'$'+displayPrice.toFixed(2):'No price'}</div>
+      ${comboLabel?`<div class="combo-includes-label" style="color:var(--success)">${esc(comboLabel)}</div>`:''}
+      ${subLabel?`<div class="mod-sub-label">${esc(subLabel)}</div>`:''}
+      ${addonLabel?`<div class="mod-sub-label" style="color:#818cf8">${esc(addonLabel)}</div>`:''}
       <div class="qty-controls">
         <button class="qty-btn" onclick="adj('${mi.id}',-1)">−</button>
         <span class="qty-num">${qty}</span>
@@ -266,11 +380,162 @@ function renderMenuGrid(){
 }
 
 function adj(id, delta){
-  const n = Math.max(0, (cart[id]||0)+delta);
-  if (n===0) delete cart[id]; else cart[id]=n;
+  const prev = cart[id]||0;
+  const n = Math.max(0, prev+delta);
+  if (n===0){
+    delete cart[id];
+    delete cartMods[id];
+    delete cartAddons[id];
+    delete cartCombo[id];
+  } else {
+    cart[id]=n;
+  }
+  // Show customize modal when going from 0→1 for an item with mods or add-ons
+  if (delta > 0 && prev === 0) {
+    const mi = menuItems.find(m=>m.id===id);
+    if (itemNeedsCustomization(mi)) {
+      openCustomizeModal(id);
+      return; // don't re-render yet — modal will trigger render on confirm
+    }
+  }
   renderMenuGrid();
   renderCartPanel();
   updateCartBadge();
+}
+
+// ── Item Customization (substitutions + add-ons) ───────────
+function openCustomizeModal(id) {
+  const mi = menuItems.find(m=>m.id===id);
+  if (!mi) return;
+  pendingModId = id;
+  pendingModChoice = cartMods[id] || '';
+
+  document.getElementById('mod-modal-title').textContent = esc(mi.name);
+
+  const comboSection = document.getElementById('mod-combo-section');
+  if (mi.isCombo) {
+    comboSection.style.display = 'block';
+    const comboItems = mi.comboItems || [];
+    const comboPrice = mi.comboPrice > 0 ? mi.comboPrice : mi.salePrice;
+    const includesText = comboItems.length
+      ? ' — includes ' + comboItems.map(c=>c.name+(c.qty>1?' ×'+c.qty:'')).join(', ')
+      : '';
+    const current = !!cartCombo[id];
+    const grid = document.getElementById('mod-combo-grid');
+    grid.innerHTML = `
+      <button class="mod-option-btn${!current?' selected':''}" data-comboval="no" onclick="selectComboOption(this)">Item only — $${(mi.salePrice||0).toFixed(2)}</button>
+      <button class="mod-option-btn${current?' selected':''}" data-comboval="yes" onclick="selectComboOption(this)">Combo — $${comboPrice.toFixed(2)}${esc(includesText)}</button>
+    `;
+  } else {
+    comboSection.style.display = 'none';
+  }
+
+  const noteEl = document.getElementById('mod-modal-note');
+  if (mi.modFlag) {
+    noteEl.style.display = 'block';
+    noteEl.textContent = mi.modNote
+      ? '⚠️ ' + mi.modNote
+      : '⚠️ Ingredient issue — choose a substitution or continue as-is.';
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  const subSection = document.getElementById('mod-sub-section');
+  if (mi.modFlag) {
+    subSection.style.display = 'block';
+    const opts = mi.modOptions || [];
+    const grid = document.getElementById('mod-options-grid');
+    const current = pendingModChoice;
+    // Build buttons; use data-value to avoid quote-escaping in onclick
+    const makeBtn = (label, val, extra='') =>
+      `<button class="mod-option-btn${extra}${val===current?' selected':''}" data-modval="${esc(val)}" onclick="selectModOption(this)">${esc(label)}</button>`;
+    grid.innerHTML = opts.map(o => makeBtn(o, o)).join('')
+      + makeBtn('No substitution — continue as-is', '', ' skip');
+  } else {
+    subSection.style.display = 'none';
+  }
+
+  const addonSection = document.getElementById('mod-addon-section');
+  const addOns = mi.addOns || [];
+  if (addOns.length) {
+    addonSection.style.display = 'block';
+    const existing = cartAddons[id] || [];
+    const grid = document.getElementById('mod-addon-grid');
+    grid.innerHTML = addOns.map((a, idx) => {
+      const selected = existing.some(e => e.name === a.name);
+      return `<button class="addon-option-btn${selected?' selected':''}" data-idx="${idx}" onclick="toggleAddonOption(this)">
+        <span>${esc(a.name)}</span>
+        <span class="addon-option-price">+$${(a.price||0).toFixed(2)}</span>
+      </button>`;
+    }).join('');
+  } else {
+    addonSection.style.display = 'none';
+  }
+
+  document.getElementById('mod-add-btn').classList.add('ready');
+  document.getElementById('mod-modal').classList.add('visible');
+}
+
+function selectModOption(btn) {
+  document.querySelectorAll('#mod-options-grid .mod-option-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  pendingModChoice = btn.dataset.modval; // '' for skip, text for a sub
+}
+
+function selectComboOption(btn) {
+  document.querySelectorAll('#mod-combo-grid .mod-option-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function toggleAddonOption(btn) {
+  btn.classList.toggle('selected');
+}
+
+function confirmMod() {
+  const id = pendingModId;
+  if (!id) return;
+  const mi = menuItems.find(m=>m.id===id);
+
+  if (mi && mi.isCombo) {
+    const sel = document.querySelector('#mod-combo-grid .mod-option-btn.selected');
+    const wantsCombo = sel ? sel.dataset.comboval === 'yes' : false;
+    if (wantsCombo) cartCombo[id] = true;
+    else delete cartCombo[id];
+  }
+
+  if (mi && mi.modFlag) {
+    if (pendingModChoice) cartMods[id] = pendingModChoice;
+    else delete cartMods[id];
+  }
+
+  if (mi && mi.addOns && mi.addOns.length) {
+    const selected = [];
+    document.querySelectorAll('#mod-addon-grid .addon-option-btn.selected').forEach(btn => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      if (mi.addOns[idx]) {
+        const a = mi.addOns[idx];
+        selected.push({ itemId: a.itemId||null, name: a.name, price: a.price||0, servingsUsed: a.servingsUsed||0 });
+      }
+    });
+    if (selected.length) cartAddons[id] = selected;
+    else delete cartAddons[id];
+  }
+
+  // This modal can be opened via a name-click before the item is in the cart
+  if (!cart[id]) cart[id] = 1;
+
+  pendingModId = null;
+  pendingModChoice = null;
+  document.getElementById('mod-modal').classList.remove('visible');
+  renderMenuGrid();
+  renderCartPanel();
+  updateCartBadge();
+}
+
+function closeCustomizeModal() {
+  pendingModId = null;
+  pendingModChoice = null;
+  document.getElementById('mod-modal').classList.remove('visible');
 }
 
 // ── Cart ──────────────────────────────────────────────────
@@ -294,12 +559,24 @@ function renderCartPanel(){
   el.innerHTML = entries.map(([id,qty]) => {
     const mi = menuItems.find(m=>m.id===id);
     if (!mi) return '';
-    const sub = qty*(mi.salePrice||0);
+    const mod = cartMods[id];
+    const addons = cartAddons[id] || [];
+    const wantsCombo = !!cartCombo[id];
+    const unitPrice = effectiveUnitPrice(mi, id);
+    const sub = qty*unitPrice;
     subtotal += sub;
-    return `<div class="cart-item">
-      <span class="cart-item-name">${esc(mi.name)}</span>
+    const comboItems = (wantsCombo && mi.isCombo) ? (mi.comboItems||[]) : [];
+    const comboLine = comboItems.length
+      ? `🍱 Combo — Includes: ${comboItems.map(c=>esc(c.name)+(c.qty>1?' ×'+c.qty:'')).join(', ')}`
+      : '';
+    const nameClick = itemNeedsCustomization(mi) ? ` style="cursor:pointer" onclick="openCustomizeModal('${id}')"` : '';
+    return `<div class="cart-item" style="flex-wrap:wrap">
+      <span class="cart-item-name"${nameClick}>${esc(mi.name)}</span>
       <span class="cart-item-qty">× ${qty}</span>
-      <span class="cart-item-sub">${mi.salePrice>0?'$'+sub.toFixed(2):'—'}</span>
+      <span class="cart-item-sub">${unitPrice>0?'$'+sub.toFixed(2):'—'}</span>
+      ${mod?`<div style="width:100%" class="cart-item-mod">↳ Sub: ${esc(mod)}</div>`:''}
+      ${addons.length?`<div style="width:100%" class="cart-item-addon">↳ + ${addons.map(a=>esc(a.name)+' ($'+(a.price||0).toFixed(2)+')').join(', ')}</div>`:''}
+      ${comboLine?`<div style="width:100%" class="cart-item-combo">↳ ${comboLine}</div>`:''}
     </div>`;
   }).join('');
 
@@ -358,9 +635,23 @@ async function placeOrder(){
 
     const items = Object.entries(cart).map(([id,qty]) => {
       const mi = menuItems.find(m=>m.id===id);
-      const sub = qty*(mi?.salePrice||0);
+      const mod = cartMods[id] || null;
+      const addOns = cartAddons[id] || [];
+      const addOnsTotal = addOns.reduce((s,a)=>s+(a.price||0),0);
+      const wantsCombo = !!cartCombo[id];
+      const unitPrice = effectiveUnitPrice(mi, id);
+      const sub = qty*unitPrice;
       subtotal += sub;
-      return { menuItemId:id, menuItemName:mi?.name||'?', qty, unitPrice:mi?.salePrice||0, subtotal:sub };
+      const comboIncludes = (wantsCombo && mi?.isCombo && mi.comboItems && mi.comboItems.length)
+        ? mi.comboItems.map(c=>({ menuItemId:c.menuItemId, name:c.name, qty:c.qty||1 }))
+        : null;
+      return {
+        menuItemId:id, menuItemName:mi?.name||'?', qty,
+        unitPrice:unitPrice-addOnsTotal, subtotal:sub,
+        ...(mod?{mod}:{}),
+        ...(addOns.length?{addOns, addOnsTotal}:{}),
+        ...(comboIncludes?{isCombo:true, comboIncludes}:{})
+      };
     });
 
     const tax = subtotal * TAX_RATE;
@@ -373,8 +664,12 @@ async function placeOrder(){
       status: 'open', createdAt: now, completedAt: null
     });
 
+    // Deduct inventory stock for any ingredient-linked add-ons and any combo
+    // extras selected on this order
+    await deductOrderStock(items, orderNum, now);
+
     // Reset
-    cart = {}; selectedPayment = null;
+    cart = {}; cartMods = {}; cartAddons = {}; cartCombo = {}; selectedPayment = null;
     document.getElementById('order-name').value = '';
     document.getElementById('order-note').value = '';
     document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
@@ -393,6 +688,68 @@ async function placeOrder(){
       document.getElementById('place-btn').disabled = !(entries.length && selectedPayment);
     }, 50);
   }
+}
+
+// Deducts inventory stock for every ingredient-linked add-on, plus the
+// ingredients of any combo-included items when a line ordered the combo, and
+// logs a matching "out" transaction for each — same as the recap tool does.
+// (The base menu item's own ingredients are still only deducted through the
+// manual Daily Recap, since the order station doesn't track every raw
+// ingredient the way it now does for add-ons and combo extras.)
+async function deductOrderStock(orderItems, orderNum, now) {
+  // Merge servings needed per inventory item across every order line
+  const merged = {}; // { itemId: { name, totalServings } }
+  const addServings = (itemId, name, servings) => {
+    if (!itemId || !(servings > 0)) return;
+    if (!merged[itemId]) merged[itemId] = { name, totalServings: 0 };
+    merged[itemId].totalServings += servings;
+  };
+
+  orderItems.forEach(line => {
+    (line.addOns || []).forEach(a => {
+      addServings(a.itemId, a.name, (a.servingsUsed||0) * line.qty);
+    });
+    if (line.isCombo && line.comboIncludes) {
+      line.comboIncludes.forEach(c => {
+        const inclMi = menuItems.find(m => m.id === c.menuItemId);
+        if (!inclMi) return;
+        (inclMi.ingredients || []).forEach(ing => {
+          addServings(ing.itemId, ing.itemName, ing.servingsUsed * (c.qty||1) * line.qty);
+        });
+      });
+    }
+  });
+
+  const ids = Object.keys(merged);
+  if (!ids.length) return;
+
+  const date = now.split('T')[0];
+  await Promise.all(ids.map(async itemId => {
+    const inv = invItems.find(i => i.id === itemId);
+    if (!inv || !inv.servingsPerUnit) return;
+    const { name, totalServings } = merged[itemId];
+    const unitsDeducted = totalServings / inv.servingsPerUnit;
+    if (unitsDeducted <= 0) return;
+
+    // Atomic stock decrement
+    await db.ref('items/'+itemId).transaction(cur => {
+      if (cur === null) return cur;
+      return { ...cur, currentStock: Math.max(0, (cur.currentStock||0) - unitsDeducted) };
+    });
+
+    const txId = uuid();
+    await db.ref('transactions/'+txId).set({
+      id: txId, date,
+      itemId, itemName: inv.name,
+      type: 'out',
+      qty: unitsDeducted, servings: totalServings,
+      unitCost: inv.unitCost || 0,
+      totalCost: unitsDeducted * (inv.unitCost || 0),
+      note: `Order #${pad(orderNum)} — add-on/combo: ${name}`,
+      source: 'order-addon-combo',
+      createdAt: now
+    });
+  }));
 }
 
 // ── History ───────────────────────────────────────────────
