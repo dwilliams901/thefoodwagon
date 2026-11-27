@@ -2,283 +2,331 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Order Station — The Food Wagon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- iOS full-screen web app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kitchen">
+<title>Kitchen Display — The Food Wagon</title>
 <style>
 :root {
-  --bg: #0f1117; --surface: #1a1d27; --surface-2: #21253a; --surface-3: #2a2f45;
-  --border: #2e3347; --border-light: #3a4060;
-  --text: #e8eaf0; --text-muted: #8891aa;
-  --primary: #e87d2b; --primary-light: #f0a060;
-  --success: #3bb56a; --danger: #e84f3b; --warning: #f0b429;
-  --radius: 10px; --radius-lg: 14px; --shadow: 0 4px 20px rgba(0,0,0,.4);
+  --bg: #07090e; --surface: #0d1018; --surface-2: #131722;
+  --border: #1a2030; --border-new: #f0b429;
+  --text: #ffffff; --text-dim: #8899bb; --text-muted: #4a556a;
+  --primary: #e87d2b; --success: #2fc86a; --danger: #e84f3b;
+  --warning: #f0b429; --radius: 14px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-/* ── LOADING ── */
-#loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:999}
-.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── HEADER ── */
-.app-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
-.header-brand{display:flex;align-items:center;gap:10px}
-.header-brand .logo{font-size:24px}
-.header-brand h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
-.header-brand p{font-size:11px;color:var(--text-muted);margin-top:1px}
-.cart-pill{background:var(--primary);color:#fff;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;display:none;border:none;transition:opacity .15s}
-.cart-pill:active{opacity:.8}
-
-/* ── LAYOUT ── */
-.main-wrap{display:grid;grid-template-columns:1fr 350px;min-height:calc(100vh - 57px)}
-@media(max-width:680px){.main-wrap{grid-template-columns:1fr}}
-
-/* ── MENU PANEL ── */
-.menu-panel{padding:20px;border-right:1px solid var(--border)}
-.panel-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px}
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:14px}
-.menu-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-lg);padding:16px 14px;transition:border-color .15s,background .15s;position:relative;user-select:none}
-.menu-card.has-qty{border-color:var(--primary);background:var(--surface-2)}
-.menu-card-name{font-size:15px;font-weight:600;line-height:1.3;margin-bottom:4px}
-.menu-card-price{font-size:14px;font-weight:700;color:var(--primary-light);margin-bottom:14px}
-.menu-card-price.no-price{color:var(--text-muted)}
-.qty-controls{display:flex;align-items:center;gap:10px}
-.qty-btn{width:42px;height:42px;border:none;border-radius:50%;background:var(--surface-3);color:var(--text);font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;transition:background .1s;flex-shrink:0}
-.qty-btn:active{background:var(--primary)}
-.qty-num{font-size:20px;font-weight:700;min-width:28px;text-align:center}
-.qty-badge{position:absolute;top:-7px;right:-7px;background:var(--primary);color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
-.no-menu{text-align:center;padding:48px 20px;color:var(--text-muted);grid-column:1/-1}
-.no-menu h3{color:var(--text);margin-bottom:6px;font-size:16px}
-
-/* ── CART PANEL ── */
-.cart-panel{background:var(--surface);display:flex;flex-direction:column;padding:20px;min-height:calc(100vh - 57px)}
-@media(max-width:680px){
-  .cart-panel{display:none;position:fixed;inset:0;z-index:100;min-height:100vh;overflow-y:auto}
-  .cart-panel.open{display:flex}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
-.cart-items{flex:1;overflow-y:auto;margin-bottom:16px}
-.cart-empty{text-align:center;padding:36px 16px;color:var(--text-muted);font-size:13px}
-.cart-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.cart-item-name{flex:1;font-size:14px;font-weight:500}
-.cart-item-qty{font-size:12px;color:var(--text-muted)}
-.cart-item-sub{font-size:14px;font-weight:700;color:var(--primary-light)}
-.cart-divider{height:1px;background:var(--border);margin:4px 0 12px}
-.cart-subtotal-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
-.cart-tax-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-bottom:8px}
-.cart-grand-divider{height:1px;background:var(--border-light);margin:6px 0 10px}
-.cart-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
-.cart-total-label{font-size:14px;font-weight:600;color:var(--text-muted)}
-.cart-sub-amt{font-size:14px;font-weight:600;color:var(--text-muted)}
-.cart-tax-amt{font-size:14px;font-weight:600;color:var(--text-muted)}
-.cart-total-amt{font-size:26px;font-weight:800;color:var(--text)}
-.name-input{width:100%;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:14px;font-family:inherit;margin-bottom:8px}
-.name-input:focus{outline:none;border-color:var(--primary)}
-.name-input::placeholder{color:var(--text-muted)}
-.note-textarea{width:100%;background:var(--surface-3);border:1px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:52px;margin-bottom:16px}
-.note-textarea:focus{outline:none;border-color:var(--primary)}
-.note-textarea::placeholder{color:var(--text-muted)}
-.payment-heading{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
-.payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
-.pay-btn.full{grid-column:1/-1}
-.pay-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
-.pay-btn.active{border-color:var(--success);background:rgba(59,181,106,.12);color:var(--success)}
-.place-btn{width:100%;padding:17px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-lg);font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.02em;transition:opacity .15s,transform .1s}
-.place-btn:disabled{opacity:.35;cursor:not-allowed}
-.place-btn:not(:disabled):active{transform:scale(.98)}
-.cart-close-btn{display:none;width:100%;padding:12px;background:var(--surface-3);color:var(--text-muted);border:none;border-radius:var(--radius);font-size:14px;cursor:pointer;margin-bottom:14px}
-@media(max-width:680px){.cart-close-btn{display:block}}
 
-/* ── FLOAT CART BTN (mobile) — removed ── */
+/* ── AUDIO UNLOCK OVERLAY ── */
+#unlock-overlay{
+  position:fixed;inset:0;background:rgba(7,9,14,.97);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:20px;z-index:999;cursor:pointer;
+}
+#unlock-overlay h2{font-size:24px;font-weight:800;letter-spacing:.02em}
+#unlock-overlay p{font-size:15px;color:var(--text-dim);text-align:center;max-width:320px;line-height:1.5}
+.tap-ring{
+  width:80px;height:80px;border-radius:50%;border:3px solid var(--warning);
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+  animation:ringPulse 1.6s ease-in-out infinite;
+}
+@keyframes ringPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(240,180,41,.5)}
+  50%{box-shadow:0 0 0 20px rgba(240,180,41,0)}
+}
 
-/* ── RECENT ORDERS ── */
-.recent-section{max-width:1000px;margin:0 auto;padding:20px;width:100%}
-.order-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.order-num-chip{background:var(--surface-3);border-radius:8px;padding:4px 11px;font-size:13px;font-weight:700;min-width:54px;text-align:center;flex-shrink:0}
-.status-chip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0}
-.status-chip.open{background:rgba(240,180,41,.18);color:var(--warning)}
-.status-chip.complete{background:rgba(59,181,106,.18);color:var(--success)}
-.order-row-items{flex:1;font-size:13px;color:var(--text-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.order-row-total{font-size:14px;font-weight:700;flex-shrink:0}
-.order-row-time{font-size:12px;color:var(--text-muted);flex-shrink:0}
+/* ── HEADER BAR ── */
+.kds-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.kds-brand{display:flex;align-items:center;gap:10px}
+.kds-brand .logo{font-size:22px}
+.kds-brand h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.kds-brand p{font-size:11px;color:var(--text-muted);margin-top:1px}
 
-/* ── MOD BADGE on menu card ── */
-.menu-card.is-mod{border-color:rgba(240,180,41,.4)}
-.menu-card.is-mod.has-qty{border-color:var(--primary)}
-.mod-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(240,180,41,.14);border:1px solid rgba(240,180,41,.35);color:#d97706;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;margin-right:4px;line-height:1.4}
-.combo-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(59,181,106,.14);border:1px solid rgba(59,181,106,.35);color:var(--success);border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;margin-right:4px;line-height:1.4}
-.addon-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.35);color:#818cf8;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;line-height:1.4}
-.flavor-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(236,72,153,.14);border:1px solid rgba(236,72,153,.35);color:#f472b6;border-radius:6px;font-size:11px;font-weight:700;padding:2px 7px;margin-bottom:6px;margin-right:4px;line-height:1.4}
-.menu-card-name{cursor:pointer}
-.menu-card-name:active{opacity:.7}
-.mod-sub-label{font-size:11px;color:var(--success);margin-top:4px;font-weight:600;overflow:hidden;text-overflow:ellipsis}
-.combo-includes-label{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.3}
-.cart-item-mod{font-size:11px;color:var(--success);font-style:italic;margin-top:1px}
-.cart-item-addon{font-size:11px;color:#818cf8;font-style:italic;margin-top:1px}
-.cart-item-combo{font-size:11px;color:var(--text-muted);margin-top:1px}
+.kds-stats{display:flex;align-items:center;gap:16px}
+.order-count-badge{
+  background:var(--primary);color:#fff;
+  padding:7px 16px;border-radius:20px;
+  font-size:14px;font-weight:800;letter-spacing:.02em;
+  min-width:52px;text-align:center;
+}
+.order-count-badge.empty{background:var(--border);color:var(--text-muted)}
+.kds-clock{font-size:20px;font-weight:700;letter-spacing:.04em;color:var(--text);font-variant-numeric:tabular-nums}
 
-/* ── MOD PICKER MODAL ── */
-#mod-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;align-items:flex-end;justify-content:center;padding:0}
-#mod-modal.visible{display:flex}
-.mod-modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:480px;padding:24px 20px 0;border-top:1px solid var(--border-light);box-shadow:0 -6px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:88vh}
-.mod-modal-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding-bottom:20px}
-.mod-modal-footer{padding:12px 0 28px;flex-shrink:0}
-.mod-modal-title{font-size:17px;font-weight:800;margin-bottom:4px}
-.mod-modal-note{font-size:13px;color:var(--warning);margin-bottom:16px;line-height:1.4}
-.mod-modal-subheading{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
-.mod-options-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-.mod-option-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
-.mod-option-btn.selected{border-color:var(--success);background:rgba(59,181,106,.12);color:var(--success)}
-.mod-option-btn.skip{color:var(--text-muted);font-weight:500}
-.mod-option-btn[disabled]{opacity:.4;cursor:not-allowed}
-.addon-option-btn{background:var(--surface-3);border:2px solid var(--border-light);border-radius:var(--radius);color:var(--text);padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.addon-option-btn.selected{border-color:#818cf8;background:rgba(99,102,241,.12);color:#818cf8}
-.addon-option-price{font-size:13px;font-weight:700;opacity:.8}
-.mod-add-btn{width:100%;padding:16px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-lg);font-size:16px;font-weight:800;cursor:pointer;opacity:.4;transition:opacity .15s}
-.mod-add-btn.ready{opacity:1}
+/* ── MAIN ORDERS AREA ── */
+.kds-body{
+  flex:1;overflow-y:auto;padding:16px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;
+  align-content:start;
+}
+/* Needed for full-height flex layout */
+.kds-root{display:flex;flex-direction:column;height:100%;height:100dvh}
 
-/* ── FLAVOR PICKER MODAL ── */
-#flavor-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;align-items:flex-end;justify-content:center;padding:0}
-#flavor-modal.visible{display:flex}
-.flavor-count-badge{font-size:10px;font-weight:700;background:rgba(236,72,153,.85);color:#fff;border-radius:3px;padding:1px 5px;margin-left:6px}
+/* scrollbar */
+.kds-body::-webkit-scrollbar{width:6px}
+.kds-body::-webkit-scrollbar-track{background:transparent}
+.kds-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-/* ── TOAST ── */
-.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center}
-.toast{background:var(--surface-2);border:1px solid var(--border-light);color:var(--text);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;box-shadow:var(--shadow);animation:fadeUp .22s ease;white-space:nowrap}
-.toast.success{border-color:var(--success);color:var(--success)}
-.toast.error{border-color:var(--danger);color:var(--danger)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* ── ORDER CARDS ── */
+.order-card{
+  background:var(--surface);
+  border:2px solid var(--border);
+  border-radius:var(--radius);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:border-color .3s, transform .15s;
+  cursor:pointer;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.order-card:active{transform:scale(.985)}
+.order-card-hint{
+  text-align:center;padding:10px 14px;
+  font-size:12px;color:var(--text-muted);
+  letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  border-top:1px solid var(--border);
+}
+
+/* New order: amber pulse */
+@keyframes newPulse{
+  0%  {box-shadow:0 0 0 0 rgba(240,180,41,.7);border-color:#f0b429}
+  60% {box-shadow:0 0 0 14px rgba(240,180,41,0);border-color:rgba(240,180,41,.5)}
+  100%{box-shadow:0 0 0 0 rgba(240,180,41,0);border-color:#f0b429}
+}
+.order-card.is-new{
+  border-color:var(--border-new) !important;
+  animation:newPulse 1.6s ease-in-out infinite;
+}
+
+.card-header{
+  padding:14px 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  gap:10px;
+}
+.order-num{font-size:36px;font-weight:900;letter-spacing:-.02em;line-height:1}
+.card-meta{text-align:right}
+.order-elapsed{font-size:14px;font-weight:600;color:var(--text-dim)}
+.new-badge{
+  display:inline-block;background:var(--warning);color:#000;
+  font-size:10px;font-weight:800;letter-spacing:.08em;
+  padding:3px 8px;border-radius:6px;margin-top:4px;
+  text-transform:uppercase;
+}
+.payment-tag{
+  font-size:11px;color:var(--text-muted);margin-top:4px;
+  text-transform:uppercase;letter-spacing:.06em;font-weight:600;
+}
+
+/* Items */
+.card-items{padding:12px 16px;flex:1}
+.card-item-row{
+  display:flex;gap:12px;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--border);
+}
+.card-item-row:last-child{border-bottom:none}
+.item-qty{
+  font-size:22px;font-weight:800;color:var(--primary);
+  min-width:36px;flex-shrink:0;line-height:1;
+}
+.item-name{font-size:17px;font-weight:600;line-height:1.3}
+.item-mod{font-size:12px;font-weight:600;color:#34d399;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:5px;padding:2px 7px;margin-top:3px;display:inline-block}
+.item-addon{font-size:12px;font-weight:600;color:#a5b4fc;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:2px 7px;margin-top:3px;display:inline-block}
+.item-combo{font-size:12px;color:var(--text-muted);margin-top:3px}
+
+/* Customer name */
+.card-name{
+  margin:0 16px 6px;
+  font-size:15px;font-weight:700;color:var(--text);
+}
+
+/* Note */
+.card-note{
+  margin:0 14px 10px;padding:9px 12px;
+  background:rgba(240,180,41,.1);border-left:3px solid var(--warning);
+  border-radius:0 8px 8px 0;
+  font-size:14px;color:var(--warning);font-weight:500;line-height:1.4;
+}
+
+/* ── NO ORDERS STATE ── */
+.no-orders{
+  grid-column:1/-1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:60px 20px;color:var(--text-muted);text-align:center;
+}
+.no-orders .icon{font-size:52px;opacity:.3}
+.no-orders h2{font-size:22px;font-weight:700;color:var(--text-muted)}
+.no-orders p{font-size:14px;max-width:280px;line-height:1.5}
+
+/* ── PREVIOUS ORDERS BUTTON ── */
+.prev-orders-btn{
+  background:var(--surface-2);color:var(--text-dim);
+  border:1px solid var(--border);border-radius:20px;
+  padding:7px 14px;font-size:13px;font-weight:700;
+  cursor:pointer;letter-spacing:.02em;white-space:nowrap;
+  transition:border-color .2s, color .2s;
+}
+.prev-orders-btn:active{opacity:.75}
+
+/* ── CONFIRMATION MODAL ── */
+#confirm-modal{
+  position:fixed;inset:0;background:rgba(7,9,14,.88);
+  display:none;align-items:center;justify-content:center;
+  z-index:200;padding:20px;
+  -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+}
+#confirm-modal.visible{display:flex}
+.confirm-box{
+  background:var(--surface-2);border:2px solid var(--border);
+  border-radius:18px;padding:28px 24px 24px;
+  max-width:360px;width:100%;text-align:center;
+}
+.confirm-title{font-size:14px;font-weight:700;color:var(--text-muted);
+  letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.confirm-order-num{
+  font-size:56px;font-weight:900;letter-spacing:-.03em;
+  color:var(--primary);line-height:1;margin-bottom:14px;
+}
+.confirm-items{
+  margin:0 0 18px;text-align:left;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:10px 0;max-height:200px;overflow-y:auto;
+}
+.confirm-item-row{display:flex;gap:10px;padding:5px 0;font-size:16px;align-items:baseline}
+.confirm-item-qty{font-weight:800;color:var(--primary);min-width:28px;flex-shrink:0}
+.confirm-item-name{font-weight:600}
+.confirm-actions{display:flex;gap:10px}
+.confirm-btn{
+  flex:1;padding:17px;border:none;border-radius:12px;
+  font-size:17px;font-weight:800;letter-spacing:.03em;
+  cursor:pointer;text-transform:uppercase;
+  transition:transform .1s,opacity .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.confirm-btn:active{transform:scale(.96)}
+.confirm-yes{background:var(--success);color:#fff}
+.confirm-no{background:var(--border);color:var(--text)}
+
+/* ── PREVIOUS ORDERS PANEL ── */
+#prev-panel{
+  position:fixed;inset:0;z-index:150;
+  display:none;flex-direction:column;
+  background:var(--bg);
+}
+#prev-panel.visible{display:flex}
+.prev-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.prev-header h2{font-size:17px;font-weight:800}
+.prev-close-btn{
+  background:var(--border);border:none;border-radius:10px;
+  color:var(--text);padding:10px 18px;font-size:14px;font-weight:700;
+  cursor:pointer;
+}
+.prev-body{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.prev-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+}
+.prev-num{font-size:28px;font-weight:900;color:var(--text-muted);min-width:60px;line-height:1}
+.prev-info{flex:1;min-width:0}
+.prev-info-name{font-size:15px;font-weight:700}
+.prev-items-text{font-size:13px;color:var(--text-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prev-time{font-size:12px;color:var(--text-muted);margin-top:4px}
+.prev-reopen-btn{
+  background:var(--warning);color:#000;border:none;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;
+  flex-shrink:0;white-space:nowrap;
+}
+.prev-empty{
+  text-align:center;padding:60px 20px;color:var(--text-muted);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.prev-empty .icon{font-size:44px;opacity:.25}
+.prev-loading{text-align:center;padding:40px;color:var(--text-muted)}
 </style>
 </head>
 <body>
 
-<div id="loading-overlay">
-  <div style="font-size:32px">🍖</div>
-  <div class="spinner"></div>
-  <div style="font-size:13px;color:var(--text-muted)">Connecting…</div>
+<!-- Audio unlock overlay -->
+<div id="unlock-overlay" onclick="activateDisplay()">
+  <div class="tap-ring">🍖</div>
+  <h2>Kitchen Display</h2>
+  <p>Tap anywhere to activate audio alerts and start the display.</p>
 </div>
 
-<header class="app-header">
-  <div class="header-brand">
-    <span class="logo">🍖</span>
-    <div>
-      <h1>The Food Wagon</h1>
-      <p>Order Station</p>
-    </div>
-  </div>
-  <button class="cart-pill" id="cart-pill" onclick="openCart()">🛒 0 items</button>
-</header>
-
-<div class="main-wrap">
-
-  <!-- ── MENU ── -->
-  <div class="menu-panel">
-    <div class="panel-title">Menu</div>
-    <div class="menu-grid" id="menu-grid">
-      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Loading menu…</div>
-    </div>
-  </div>
-
-  <!-- ── CART ── -->
-  <div class="cart-panel" id="cart-panel">
-    <button class="cart-close-btn" onclick="closeCart()">✕ Close</button>
-    <div class="panel-title">Current Order</div>
-
-    <div class="cart-items" id="cart-items">
-      <div class="cart-empty">No items yet.<br>Select from the menu.</div>
-    </div>
-
-    <div class="cart-divider"></div>
-    <div class="cart-subtotal-row">
-      <span class="cart-total-label">Subtotal</span>
-      <span class="cart-sub-amt" id="cart-subtotal">$0.00</span>
-    </div>
-    <div class="cart-tax-row">
-      <span class="cart-total-label">Tax (10%)</span>
-      <span class="cart-tax-amt" id="cart-tax">$0.00</span>
-    </div>
-    <div class="cart-grand-divider"></div>
-    <div class="cart-total-row">
-      <span class="cart-total-label">Total</span>
-      <span class="cart-total-amt" id="cart-total">$0.00</span>
-    </div>
-
-    <input id="order-name" class="name-input" type="text" placeholder="Customer name (optional)">
-    <textarea id="order-note" class="note-textarea" placeholder="Special requests, allergies…" rows="2"></textarea>
-
-    <div class="payment-heading">Payment Received Via</div>
-    <div class="payment-grid">
-      <button class="pay-btn" data-method="cash"    onclick="pickPayment(this)">💵 Cash</button>
-      <button class="pay-btn" data-method="card"    onclick="pickPayment(this)">💳 Card</button>
-      <button class="pay-btn" data-method="venmo"   onclick="pickPayment(this)">📱 Venmo</button>
-      <button class="pay-btn" data-method="cashapp" onclick="pickPayment(this)">💚 CashApp</button>
-      <button class="pay-btn full" data-method="other" onclick="pickPayment(this)">🔄 Other</button>
-    </div>
-
-    <button class="place-btn" id="place-btn" onclick="placeOrder()" disabled>Place Order</button>
-  </div>
-
-</div>
-
-<!-- Float cart button (mobile) -->
-
-<!-- Recent Orders -->
-<div class="recent-section">
-  <div class="panel-title" style="margin-bottom:12px">Recent Orders</div>
-  <div id="order-history"></div>
-</div>
-
-<!-- Item Customization Modal (substitutions + add-ons) -->
-<div id="mod-modal" onclick="if(event.target.id==='mod-modal') closeCustomizeModal()">
-  <div class="mod-modal-box">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-      <div class="mod-modal-title" id="mod-modal-title">Customize Item</div>
-      <button onclick="closeCustomizeModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px">×</button>
-    </div>
-    <div class="mod-modal-note" id="mod-modal-note" style="display:none"></div>
-
-    <div class="mod-modal-scroll">
-      <div id="mod-combo-section" style="display:none">
-        <div class="mod-modal-subheading">Make it a combo?</div>
-        <div class="mod-options-grid" id="mod-combo-grid"></div>
-      </div>
-
-      <div id="mod-combo-flavor-section" style="display:none">
-        <div id="mod-combo-flavor-groups"></div>
-      </div>
-
-      <div id="mod-sub-section" style="display:none">
-        <div class="mod-modal-subheading">Choose a substitution:</div>
-        <div class="mod-options-grid" id="mod-options-grid"></div>
-      </div>
-
-      <div id="mod-addon-section" style="display:none">
-        <div class="mod-modal-subheading">Add-ons:</div>
-        <div class="mod-options-grid" id="mod-addon-grid"></div>
+<div class="kds-root">
+  <!-- Header -->
+  <div class="kds-header">
+    <div class="kds-brand">
+      <span class="logo">🍖</span>
+      <div>
+        <h1>The Food Wagon</h1>
+        <p>Open Orders</p>
       </div>
     </div>
+    <div class="kds-stats">
+      <button class="prev-orders-btn" onclick="showPreviousOrders()">📋 Previous</button>
+      <div class="order-count-badge empty" id="order-count">0 Orders</div>
+      <div class="kds-clock" id="kds-clock">--:-- --</div>
+    </div>
+  </div>
 
-    <div class="mod-modal-footer">
-      <button class="mod-add-btn ready" id="mod-add-btn" onclick="confirmMod()">Add to Order</button>
+  <!-- Orders grid -->
+  <div class="kds-body" id="orders-grid">
+    <div class="no-orders">
+      <div class="icon">✓</div>
+      <h2>All Clear</h2>
+      <p>No open orders right now.</p>
     </div>
   </div>
 </div>
 
-<!-- Flavor Picker Modal — one tap adds one drink with that flavor -->
-<div id="flavor-modal" onclick="if(event.target.id==='flavor-modal') closeFlavorModal()">
-  <div class="mod-modal-box">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
-      <div class="mod-modal-title" id="flavor-modal-title">Choose a Flavor</div>
-      <button onclick="closeFlavorModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px">×</button>
-    </div>
-    <div class="mod-modal-scroll">
-      <div class="mod-modal-subheading">Flavor:</div>
-      <div class="mod-options-grid" id="flavor-options-grid"></div>
+<!-- Confirmation modal -->
+<div id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-modal-title">Mark as Complete?</div>
+    <div class="confirm-order-num" id="confirm-num">#000</div>
+    <div class="confirm-items" id="confirm-items"></div>
+    <div class="confirm-actions">
+      <button class="confirm-btn confirm-no" onclick="cancelComplete()">Cancel</button>
+      <button class="confirm-btn confirm-yes" onclick="confirmComplete()">✓ Done</button>
     </div>
   </div>
 </div>
 
-<div class="toast-wrap" id="toast-wrap"></div>
+<!-- Previous orders panel -->
+<div id="prev-panel">
+  <div class="prev-header">
+    <h2>📋 Previous Orders</h2>
+    <button class="prev-close-btn" onclick="closePreviousOrders()">✕ Close</button>
+  </div>
+  <div class="prev-body" id="prev-body">
+    <div class="prev-loading">Loading…</div>
+  </div>
+</div>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -297,770 +345,356 @@ firebase.initializeApp({
 const db = firebase.database();
 
 // ── State ─────────────────────────────────────────────────
-let menuItems = [];
-let invItems = [];       // raw inventory items, for add-on stock deduction
-let cart = {};           // { menuItemId: qty }
-let cartMods = {};       // { menuItemId: substitutionString }
-let cartAddons = {};     // { menuItemId: [{itemId, name, price, servingsUsed}] }
-let cartCombo = {};      // { menuItemId: true } — customer wants the combo version
-let cartFlavors = {};    // { menuItemId: [flavor, flavor, ...] } — one entry per unit, in order added
-let cartComboFlavors = {}; // { menuItemId: [{menuItemId, name, flavor}, ...] } — chosen flavor for each flavored item included in the combo
-let pendingFlavorItemId = null;
-let selectedPayment = null;
-let recentOrders = [];
-let loaded = false;
-let pendingModId = null; // menuItemId awaiting mod/add-on selection
-let pendingModChoice = null; // chosen sub string or '' for skip
-let pendingComboFlavors = []; // working flavor picks while the customize modal is open, one per combo flavor slot
+let audioCtx = null;
+let audioReady = false;
+let isFirstLoad = true;
+let knownOrderIds = new Set();
+let openOrders = [];
+let pendingComplete = null; // { id, firebaseKey }
+let elapsedTimer = null;
+let wakeLock = null;
 
-// ── Utils ─────────────────────────────────────────────────
-function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
-function uuid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-function pad(n){ return String(n).padStart(3,'0'); }
+// ── Audio unlock (iOS requires user gesture) ───────────────
+function activateDisplay(){
+  document.getElementById('unlock-overlay').style.display = 'none';
 
-function showToast(msg, type='info', ms=3200){
-  const c=document.getElementById('toast-wrap');
-  const t=document.createElement('div');
-  t.className='toast '+type; t.textContent=msg;
-  c.appendChild(t);
-  setTimeout(()=>t.remove(), ms);
-}
-
-// ── Firebase listeners ────────────────────────────────────
-db.ref('menuItems').on('value', snap => {
-  menuItems = Object.values(snap.val()||{}).filter(Boolean);
-  renderMenuGrid();
-  if (!loaded) {
-    document.getElementById('loading-overlay').style.display='none';
-    loaded = true;
+  // Create audio context
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => { audioReady = true; });
+  } else {
+    audioReady = true;
   }
+
+  // Request wake lock (prevent screen sleep)
+  requestWakeLock();
+
+  // Start listening
+  startOrderListener();
+}
+
+// ── Wake lock ─────────────────────────────────────────────
+async function requestWakeLock(){
+  try {
+    if ('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e){ /* not available in all contexts */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
 });
 
-// Raw inventory items — needed to deduct stock when an add-on is ordered
-db.ref('items').on('value', snap => {
-  invItems = Object.values(snap.val()||{}).filter(Boolean);
-});
+// ── Order sound (3-tone chime) ────────────────────────────
+function playOrderSound(){
+  if (!audioReady || !audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 
-db.ref('orders').orderByChild('createdAt').limitToLast(25).on('value', snap => {
-  recentOrders = Object.values(snap.val()||{}).filter(Boolean)
-    .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
-  renderHistory();
-});
+  const tones = [880, 1100, 1320]; // A5, C#6, E6 — ascending chime
+  tones.forEach((freq, i) => {
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const t0   = audioCtx.currentTime + i * 0.18;
 
-// ── Menu ──────────────────────────────────────────────────
-function itemHasFlavors(mi){
-  return !!(mi && mi.hasFlavors && mi.flavors && mi.flavors.length);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.4, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.32);
+  });
+  // Extra ding after all three
+  setTimeout(() => {
+    if (!audioReady) return;
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const t0   = audioCtx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(0.3, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.5);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t0); osc.stop(t0 + 0.52);
+  }, 650);
 }
 
-function itemNeedsCustomization(mi){
-  return !!(mi && (mi.modFlag || (mi.addOns && mi.addOns.length) || mi.isCombo));
+// ── Firebase listener ─────────────────────────────────────
+function startOrderListener(){
+  db.ref('orders').orderByChild('createdAt').limitToLast(100).on('value', snap => {
+    // Use forEach to capture the real Firebase key on each order object
+    const all = [];
+    snap.forEach(child => {
+      const o = child.val();
+      if (o) { o._key = child.key; all.push(o); }
+    });
+    openOrders = all.filter(o => o.status === 'open')
+                    .sort((a,b) => a.createdAt?.localeCompare(b.createdAt||''));
+
+    // Detect and announce new orders
+    if (!isFirstLoad){
+      let newCount = 0;
+      openOrders.forEach(o => {
+        if (!knownOrderIds.has(o.id)) newCount++;
+      });
+      if (newCount > 0) playOrderSound();
+    }
+
+    knownOrderIds = new Set(openOrders.map(o => o.id));
+    isFirstLoad = false;
+
+    renderOrders();
+    updateHeader();
+  });
 }
 
-// A flavor's own price (when rung up on its own), falling back to the
-// item's regular sale price if the flavor has no price of its own set.
-// Inside a combo the flavor never has its own price — the combo's flat
-// price always applies instead, regardless of which flavor was picked.
-function effectiveFlavorPrice(mi, flavorName){
-  if (!mi) return 0;
-  const fl = (mi.flavors||[]).find(f => (typeof f === 'string' ? f : f.name) === flavorName);
-  if (fl && typeof fl === 'object' && fl.price > 0) return fl.price;
-  return mi.salePrice || 0;
+// ── Render orders ─────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function pad(n){ return String(n||0).padStart(3,'0'); }
+
+const PAY_ICONS = { cash:'💵', card:'💳', venmo:'📱', cashapp:'💚', other:'🔄' };
+
+function elapsed(createdAt){
+  const ms = Date.now() - new Date(createdAt).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'Just now';
+  return mins + 'm ago';
 }
 
-// Min/max standalone price across an item's flavors, for the menu grid's
-// price label when flavors are priced differently from one another.
-function flavorPriceRange(mi){
-  if (!mi || !itemHasFlavors(mi)) return null;
-  const prices = (mi.flavors||[]).map(f => effectiveFlavorPrice(mi, typeof f === 'string' ? f : f.name));
-  if (!prices.length) return null;
-  return { min: Math.min(...prices), max: Math.max(...prices) };
+function isNew(createdAt){
+  return (Date.now() - new Date(createdAt).getTime()) < 10 * 60 * 1000; // 10 min
 }
 
-// Effective per-unit price for a cart line: the combo price (if the customer
-// chose combo and one is set — falls back to the regular price otherwise),
-// plus any selected add-ons.
-function effectiveUnitPrice(mi, id){
-  if (!mi) return 0;
-  const base = (cartCombo[id] && mi.comboPrice > 0) ? mi.comboPrice : (mi.salePrice||0);
-  const addonsTotal = (cartAddons[id]||[]).reduce((s,a)=>s+(a.price||0),0);
-  return base + addonsTotal;
-}
+function renderOrders(){
+  const grid = document.getElementById('orders-grid');
 
-function renderMenuGrid(){
-  const g = document.getElementById('menu-grid');
-  if (!menuItems.length){
-    g.innerHTML = `<div class="no-menu"><h3>No menu items found</h3><p>Add items in the inventory manager's Menu tab first.</p></div>`;
+  if (!openOrders.length){
+    grid.innerHTML = `<div class="no-orders">
+      <div class="icon">✓</div>
+      <h2>All Clear</h2>
+      <p>No open orders. Waiting for new orders…</p>
+    </div>`;
     return;
   }
-  g.innerHTML = menuItems.map(mi => {
-    const qty = cart[mi.id]||0;
-    const hasPrice = mi.salePrice > 0;
-    const hasMod = !!mi.modFlag;
-    const addOns = mi.addOns || [];
-    const hasAddons = addOns.length > 0;
-    const comboAvailable = !!mi.isCombo;
-    const comboItems = comboAvailable ? (mi.comboItems||[]) : [];
-    const hasFlavors = itemHasFlavors(mi);
-    const needsCustomization = itemNeedsCustomization(mi);
-    const chosenSub = cartMods[mi.id];
-    const chosenAddons = cartAddons[mi.id] || [];
-    const wantsCombo = qty > 0 && !!cartCombo[mi.id];
-    const flavorsChosen = cartFlavors[mi.id] || [];
 
-    const subLabel = qty > 0 && hasMod && chosenSub ? `✓ Sub: ${chosenSub}` : '';
-    const addonLabel = qty > 0 && chosenAddons.length
-      ? `✓ ${chosenAddons.map(a=>a.name).join(', ')}` : '';
-    const comboFlavorPicks = cartComboFlavors[mi.id] || [];
-    const comboLabel = wantsCombo && comboItems.length
-      ? `✓ Combo: Includes ${comboItems.map(c=>{
-          const picks = comboFlavorPicks.filter(f=>f.menuItemId===c.menuItemId).map(f=>f.flavor);
-          return c.name+(c.qty>1?' ×'+c.qty:'')+(picks.length?' ('+picks.join(', ')+')':'');
-        }).join(', ')}` : '';
-    const flavorLabel = flavorsChosen.length ? summarizeFlavors(flavorsChosen) : '';
+  grid.innerHTML = openOrders.map(o => {
+    const nw = isNew(o.createdAt);
+    const el = elapsed(o.createdAt);
+    const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
+    const payLabel = (o.paymentMethod||'').toUpperCase();
 
-    const fRangeRaw = (hasFlavors && !wantsCombo) ? flavorPriceRange(mi) : null;
-    const fRange = (fRangeRaw && fRangeRaw.max > 0) ? fRangeRaw : null;
-    const displayPrice = (wantsCombo && mi.comboPrice > 0) ? mi.comboPrice : mi.salePrice;
-    const priceText = fRange
-      ? (fRange.min === fRange.max ? '$'+fRange.min.toFixed(2) : 'From $'+fRange.min.toFixed(2))
-      : (hasPrice ? '$'+displayPrice.toFixed(2) : 'No price');
+    const itemRows = (o.items||[]).map(i => {
+      const addOnsHtml = (i.addOns && i.addOns.length)
+        ? `<div class="item-addon">↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}</div>` : '';
+      const comboHtml = (i.comboIncludes && i.comboIncludes.length)
+        ? `<div class="item-combo">↳ Includes: ${i.comboIncludes.map(c=>{
+            const flavorText = (c.flavors && c.flavors.length) ? ' ('+c.flavors.map(esc).join(', ')+')' : '';
+            return esc(c.name)+(c.qty>1?' ×'+c.qty:'')+flavorText;
+          }).join(', ')}</div>` : '';
+      return `<div class="card-item-row">
+        <span class="item-qty">${i.qty}</span>
+        <div>
+          <span class="item-name">${esc(i.menuItemName)}${i.flavor?' — '+esc(i.flavor):''}</span>
+          ${i.mod?`<div class="item-mod">↳ Sub: ${esc(i.mod)}</div>`:''}
+          ${addOnsHtml}
+          ${comboHtml}
+        </div>
+      </div>`;
+    }).join('');
 
-    const nameAttr = hasFlavors
-      ? `onclick="openFlavorPicker('${mi.id}')"`
-      : needsCustomization
-        ? `onclick="openCustomizeModal('${mi.id}')"`
-        : `onclick="adj('${mi.id}',1)"`;
+    const noteHtml = o.note
+      ? `<div class="card-note">📝 ${esc(o.note)}</div>`
+      : '';
 
-    return `<div class="menu-card ${qty>0?'has-qty':''} ${hasMod?'is-mod':''}" id="mc-${mi.id}">
-      ${qty>0?`<div class="qty-badge">${qty}</div>`:''}
-      ${(hasMod||comboAvailable||hasAddons||hasFlavors)?`<div>
-        ${hasFlavors?`<span class="flavor-badge">🥤 ${(mi.flavors||[]).length} Flavors</span>`:''}
-        ${hasMod?`<span class="mod-badge">⚠️ Mod</span>`:''}
-        ${comboAvailable?`<span class="combo-badge">🍱 Combo available</span>`:''}
-        ${hasAddons?`<span class="addon-badge">+ Add-Ons</span>`:''}
-      </div>`:''}
-      <div class="menu-card-name" ${nameAttr}>${esc(mi.name)}</div>
-      <div class="menu-card-price ${(hasPrice||fRange)?'':'no-price'}">${priceText}</div>
-      ${comboLabel?`<div class="combo-includes-label" style="color:var(--success)">${esc(comboLabel)}</div>`:''}
-      ${subLabel?`<div class="mod-sub-label">${esc(subLabel)}</div>`:''}
-      ${addonLabel?`<div class="mod-sub-label" style="color:#818cf8">${esc(addonLabel)}</div>`:''}
-      ${flavorLabel?`<div class="mod-sub-label" style="color:#f472b6">${esc(flavorLabel)}</div>`:''}
-      <div class="qty-controls">
-        <button class="qty-btn" onclick="adj('${mi.id}',-1)">−</button>
-        <span class="qty-num">${qty}</span>
-        <button class="qty-btn" onclick="adj('${mi.id}',1)">+</button>
+    const nameHtml = o.name
+      ? `<div class="card-name">👤 ${esc(o.name)}</div>`
+      : '';
+
+    return `<div class="order-card ${nw?'is-new':''}" id="card-${o.id}" data-created="${o.createdAt}" onclick="tapOrder('${o.id}')">
+      <div class="card-header">
+        <div class="order-num">#${pad(o.orderNumber)}</div>
+        <div class="card-meta">
+          <div class="order-elapsed" id="elapsed-${o.id}">${el}</div>
+          ${nw?'<div class="new-badge">New</div>':''}
+          <div class="payment-tag">${payIcon} ${payLabel}</div>
+        </div>
       </div>
+      ${nameHtml}
+      <div class="card-items">${itemRows}</div>
+      ${noteHtml}
+      <div class="order-card-hint">Tap to complete</div>
     </div>`;
   }).join('');
+
+  // Restart elapsed timer
+  if (elapsedTimer) clearInterval(elapsedTimer);
+  elapsedTimer = setInterval(refreshElapsed, 30000);
 }
 
-// Groups a list of per-unit flavor picks into a readable summary, e.g. "2× Coke, 1× Sprite"
-function summarizeFlavors(flavorList){
-  const counts = {};
-  flavorList.forEach(f => counts[f] = (counts[f]||0)+1);
-  return Object.entries(counts).map(([f,c]) => c>1 ? `${c}× ${f}` : f).join(', ');
-}
+function refreshElapsed(){
+  openOrders.forEach(o => {
+    const el = document.getElementById('elapsed-'+o.id);
+    if (el) el.textContent = elapsed(o.createdAt);
 
-function adj(id, delta){
-  const mi = menuItems.find(m=>m.id===id);
-  // Flavored items: every tap of + prompts for that unit's flavor individually
-  if (delta > 0 && itemHasFlavors(mi)) {
-    openFlavorPicker(id);
-    return;
-  }
-  const prev = cart[id]||0;
-  const n = Math.max(0, prev+delta);
-  if (n===0){
-    delete cart[id];
-    delete cartMods[id];
-    delete cartAddons[id];
-    delete cartCombo[id];
-    delete cartComboFlavors[id];
-    delete cartFlavors[id];
-  } else {
-    cart[id]=n;
-    if (delta < 0 && cartFlavors[id]) {
-      cartFlavors[id] = cartFlavors[id].slice(0, n); // drop the most recently added flavor
+    // Remove flash class after 10 min
+    const card = document.getElementById('card-'+o.id);
+    if (card) {
+      if (isNew(o.createdAt)){
+        card.classList.add('is-new');
+      } else {
+        card.classList.remove('is-new');
+      }
     }
-  }
-  // Show customize modal when going from 0→1 for an item with mods or add-ons
-  if (delta > 0 && prev === 0) {
-    if (itemNeedsCustomization(mi)) {
-      openCustomizeModal(id);
-      return; // don't re-render yet — modal will trigger render on confirm
-    }
-  }
-  renderMenuGrid();
-  renderCartPanel();
-  updateCartBadge();
+  });
 }
 
-// ── Item Customization (substitutions + add-ons) ───────────
-function openCustomizeModal(id) {
-  const mi = menuItems.find(m=>m.id===id);
-  if (!mi) return;
-  pendingModId = id;
-  pendingModChoice = cartMods[id] || '';
+// ── Tap order card → show confirmation modal ───────────────
+function tapOrder(orderId){
+  const order = openOrders.find(o => o.id === orderId);
+  if (!order) return;
 
-  document.getElementById('mod-modal-title').textContent = esc(mi.name);
+  pendingComplete = { id: orderId, firebaseKey: order._key || orderId };
 
-  const comboSection = document.getElementById('mod-combo-section');
-  if (mi.isCombo) {
-    comboSection.style.display = 'block';
-    const comboItems = mi.comboItems || [];
-    const comboPrice = mi.comboPrice > 0 ? mi.comboPrice : mi.salePrice;
-    const includesText = comboItems.length
-      ? ' — includes ' + comboItems.map(c=>c.name+(c.qty>1?' ×'+c.qty:'')).join(', ')
-      : '';
-    const current = !!cartCombo[id];
-    const grid = document.getElementById('mod-combo-grid');
-    grid.innerHTML = `
-      <button class="mod-option-btn${!current?' selected':''}" data-comboval="no" onclick="selectComboOption(this)">Item only — $${(mi.salePrice||0).toFixed(2)}</button>
-      <button class="mod-option-btn${current?' selected':''}" data-comboval="yes" onclick="selectComboOption(this)">Combo — $${comboPrice.toFixed(2)}${esc(includesText)}</button>
-    `;
-    // Pre-fill any previously chosen combo flavors when re-opening to edit a line
-    const slots = getComboFlavorSlots(mi);
-    const existingFlavors = cartComboFlavors[id] || [];
-    pendingComboFlavors = slots.map((slot, i) => {
-      const priorForItem = slots.slice(0, i).filter(s => s.menuItemId === slot.menuItemId).length;
-      const picksForItem = existingFlavors.filter(f => f.menuItemId === slot.menuItemId);
-      return picksForItem[priorForItem] ? picksForItem[priorForItem].flavor : null;
-    });
-    renderComboFlavorSection(id, current);
-  } else {
-    comboSection.style.display = 'none';
-    document.getElementById('mod-combo-flavor-section').style.display = 'none';
-    pendingComboFlavors = [];
-  }
+  document.getElementById('confirm-num').textContent = '#' + pad(order.orderNumber);
 
-  const noteEl = document.getElementById('mod-modal-note');
-  if (mi.modFlag) {
-    noteEl.style.display = 'block';
-    noteEl.textContent = mi.modNote
-      ? '⚠️ ' + mi.modNote
-      : '⚠️ Ingredient issue — choose a substitution or continue as-is.';
-  } else {
-    noteEl.style.display = 'none';
-  }
-
-  const subSection = document.getElementById('mod-sub-section');
-  if (mi.modFlag) {
-    subSection.style.display = 'block';
-    const opts = mi.modOptions || [];
-    const grid = document.getElementById('mod-options-grid');
-    const current = pendingModChoice;
-    // Build buttons; use data-value to avoid quote-escaping in onclick
-    const makeBtn = (label, val, extra='') =>
-      `<button class="mod-option-btn${extra}${val===current?' selected':''}" data-modval="${esc(val)}" onclick="selectModOption(this)">${esc(label)}</button>`;
-    grid.innerHTML = opts.map(o => makeBtn(o, o)).join('')
-      + makeBtn('No substitution — continue as-is', '', ' skip');
-  } else {
-    subSection.style.display = 'none';
-  }
-
-  const addonSection = document.getElementById('mod-addon-section');
-  const addOns = mi.addOns || [];
-  if (addOns.length) {
-    addonSection.style.display = 'block';
-    const existing = cartAddons[id] || [];
-    const grid = document.getElementById('mod-addon-grid');
-    grid.innerHTML = addOns.map((a, idx) => {
-      const selected = existing.some(e => e.name === a.name);
-      return `<button class="addon-option-btn${selected?' selected':''}" data-idx="${idx}" onclick="toggleAddonOption(this)">
-        <span>${esc(a.name)}</span>
-        <span class="addon-option-price">+$${(a.price||0).toFixed(2)}</span>
-      </button>`;
-    }).join('');
-  } else {
-    addonSection.style.display = 'none';
-  }
-
-  document.getElementById('mod-add-btn').classList.add('ready');
-  document.getElementById('mod-modal').classList.add('visible');
-}
-
-function selectModOption(btn) {
-  document.querySelectorAll('#mod-options-grid .mod-option-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  pendingModChoice = btn.dataset.modval; // '' for skip, text for a sub
-}
-
-function selectComboOption(btn) {
-  document.querySelectorAll('#mod-combo-grid .mod-option-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  renderComboFlavorSection(pendingModId, btn.dataset.comboval === 'yes');
-}
-
-// Shows/hides and (re)builds the per-flavor pickers for any flavored item(s)
-// bundled in this combo — one picker group per unit, in comboItems order.
-function renderComboFlavorSection(id, show) {
-  const section = document.getElementById('mod-combo-flavor-section');
-  const mi = menuItems.find(m=>m.id===id);
-  const slots = mi ? getComboFlavorSlots(mi) : [];
-  if (!show || !slots.length) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = 'block';
-  const counts = {};
-  document.getElementById('mod-combo-flavor-groups').innerHTML = slots.map((slot, i) => {
-    counts[slot.menuItemId] = (counts[slot.menuItemId]||0) + 1;
-    const total = slots.filter(s => s.menuItemId === slot.menuItemId).length;
-    const label = total > 1
-      ? `🥤 ${esc(slot.name)} (drink ${counts[slot.menuItemId]} of ${total}) — choose a flavor`
-      : `🥤 ${esc(slot.name)} — choose a flavor`;
-    const current = pendingComboFlavors[i];
-    const btns = (slot.flavors || []).map(f => {
-      const isObj = typeof f === 'object';
-      const name = isObj ? f.name : f;
-      const remaining = isObj ? flavorStockRemaining(f) : null;
-      const out = remaining !== null && remaining <= 0 && name !== current;
-      const stockLabel = remaining !== null
-        ? `<span style="display:block;font-size:10px;font-weight:600;opacity:.75">${out?'Out of stock':remaining+' left'}</span>`
-        : '';
-      return `<button class="mod-option-btn${name===current?' selected':''}" data-slot="${i}" data-flavor="${esc(name)}" ${out?'disabled':''} onclick="selectComboFlavor(this)">${esc(name)}${stockLabel}</button>`;
-    }).join('');
-    return `<div class="mod-modal-subheading" style="margin-top:14px">${label}</div><div class="mod-options-grid">${btns}</div>`;
+  const rows = (order.items||[]).map(i => {
+    const extras = [];
+    if (i.mod) extras.push(`↳ Sub: ${esc(i.mod)}`);
+    if (i.addOns && i.addOns.length) extras.push(`↳ + ${i.addOns.map(a=>esc(a.name)).join(', ')}`);
+    if (i.comboIncludes && i.comboIncludes.length) extras.push(`↳ Includes: ${i.comboIncludes.map(c=>{
+      const flavorText = (c.flavors && c.flavors.length) ? ' ('+c.flavors.map(esc).join(', ')+')' : '';
+      return esc(c.name)+(c.qty>1?' ×'+c.qty:'')+flavorText;
+    }).join(', ')}`);
+    return `<div class="confirm-item-row" style="flex-wrap:wrap">
+      <span class="confirm-item-qty">${i.qty}</span>
+      <span class="confirm-item-name">${esc(i.menuItemName)}${i.flavor?' — '+esc(i.flavor):''}</span>
+      ${extras.length?`<div style="width:100%;font-size:12px;color:var(--text-muted);padding-left:38px">${extras.join('<br>')}</div>`:''}
+    </div>`;
   }).join('');
+  document.getElementById('confirm-items').innerHTML = rows;
+
+  // Show name in modal title if present
+  const titleEl = document.getElementById('confirm-modal-title');
+  titleEl.textContent = order.name ? `Complete — ${order.name}?` : 'Mark as Complete?';
+
+  document.getElementById('confirm-modal').classList.add('visible');
 }
 
-function selectComboFlavor(btn) {
-  if (btn.disabled) return;
-  const slot = parseInt(btn.dataset.slot, 10);
-  document.querySelectorAll(`#mod-combo-flavor-groups .mod-option-btn[data-slot="${slot}"]`).forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  pendingComboFlavors[slot] = btn.dataset.flavor;
+function cancelComplete(){
+  pendingComplete = null;
+  document.getElementById('confirm-modal').classList.remove('visible');
 }
 
-function toggleAddonOption(btn) {
-  btn.classList.toggle('selected');
+function confirmComplete(){
+  if (!pendingComplete) return;
+  const { id: orderId, firebaseKey } = pendingComplete;
+  pendingComplete = null;
+  document.getElementById('confirm-modal').classList.remove('visible');
+
+  // Optimistically remove the order from the board immediately
+  openOrders = openOrders.filter(o => o.id !== orderId);
+  renderOrders();
+  updateHeader();
+
+  // Use the real Firebase key (not the id field) to guarantee the right path
+  db.ref('orders/'+firebaseKey).update({
+    status: 'complete',
+    completedAt: new Date().toISOString()
+  }).catch(e => {
+    console.error('Failed to complete order', firebaseKey, e);
+  });
 }
 
-function confirmMod() {
-  const id = pendingModId;
-  if (!id) return;
-  const mi = menuItems.find(m=>m.id===id);
+// ── Previous orders panel ──────────────────────────────────
+function showPreviousOrders(){
+  const panel = document.getElementById('prev-panel');
+  const body  = document.getElementById('prev-body');
+  panel.classList.add('visible');
+  body.innerHTML = '<div class="prev-loading">Loading…</div>';
 
-  if (mi && mi.isCombo) {
-    const sel = document.querySelector('#mod-combo-grid .mod-option-btn.selected');
-    const wantsCombo = sel ? sel.dataset.comboval === 'yes' : false;
-    if (wantsCombo) {
-      const slots = getComboFlavorSlots(mi);
-      if (slots.length && pendingComboFlavors.some(f => !f)) {
-        showToast('Choose a flavor for each drink in the combo.', 'error');
+  db.ref('orders')
+    .orderByChild('status').equalTo('complete')
+    .limitToLast(30)
+    .once('value', snap => {
+      const orders = [];
+      snap.forEach(child => {
+        const o = child.val();
+        if (o) { o._key = child.key; orders.push(o); }
+      });
+      orders.sort((a,b) => (b.completedAt||'').localeCompare(a.completedAt||''));
+
+      if (!orders.length){
+        body.innerHTML = `<div class="prev-empty">
+          <span class="icon">📋</span>
+          <p>No completed orders yet.</p>
+        </div>`;
         return;
       }
-      cartCombo[id] = true;
-      if (slots.length) {
-        cartComboFlavors[id] = slots.map((slot, i) => ({ menuItemId: slot.menuItemId, name: slot.name, flavor: pendingComboFlavors[i] }));
-      } else {
-        delete cartComboFlavors[id];
-      }
-    } else {
-      delete cartCombo[id];
-      delete cartComboFlavors[id];
-    }
-  }
 
-  if (mi && mi.modFlag) {
-    if (pendingModChoice) cartMods[id] = pendingModChoice;
-    else delete cartMods[id];
-  }
-
-  if (mi && mi.addOns && mi.addOns.length) {
-    const selected = [];
-    document.querySelectorAll('#mod-addon-grid .addon-option-btn.selected').forEach(btn => {
-      const idx = parseInt(btn.dataset.idx, 10);
-      if (mi.addOns[idx]) {
-        const a = mi.addOns[idx];
-        selected.push({ itemId: a.itemId||null, name: a.name, price: a.price||0, servingsUsed: a.servingsUsed||0 });
-      }
+      body.innerHTML = orders.map(o => {
+        const itemsSummary = (o.items||[]).map(i => i.qty + '× ' + i.menuItemName + (i.flavor?' ('+i.flavor+')':'')).join(', ');
+        const payIcon = PAY_ICONS[o.paymentMethod] || '💰';
+        const payLabel = (o.paymentMethod||'').toUpperCase();
+        const when = o.completedAt
+          ? new Date(o.completedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})
+          : '—';
+        return `<div class="prev-card">
+          <div class="prev-num">#${pad(o.orderNumber)}</div>
+          <div class="prev-info">
+            <div class="prev-info-name">${payIcon} ${payLabel} · $${(o.total||0).toFixed(2)}</div>
+            <div class="prev-items-text">${esc(itemsSummary)}</div>
+            <div class="prev-time">Completed ${when}</div>
+          </div>
+          <button class="prev-reopen-btn" onclick="reopenOrder('${o._key||o.id}')">↩ Reopen</button>
+        </div>`;
+      }).join('');
     });
-    if (selected.length) cartAddons[id] = selected;
-    else delete cartAddons[id];
-  }
-
-  // This modal can be opened via a name-click before the item is in the cart
-  if (!cart[id]) cart[id] = 1;
-
-  pendingModId = null;
-  pendingModChoice = null;
-  pendingComboFlavors = [];
-  document.getElementById('mod-modal').classList.remove('visible');
-  renderMenuGrid();
-  renderCartPanel();
-  updateCartBadge();
 }
 
-function closeCustomizeModal() {
-  pendingModId = null;
-  pendingModChoice = null;
-  pendingComboFlavors = [];
-  document.getElementById('mod-modal').classList.remove('visible');
+function closePreviousOrders(){
+  document.getElementById('prev-panel').classList.remove('visible');
 }
 
-// ── Flavor Picker — one tap both picks the flavor and adds the unit ────────
-// How many more of this flavor can still be sold, based on the linked
-// inventory item's current stock minus what's already in this cart.
-function flavorStockRemaining(f) {
-  if (!f.itemId) return null; // unlinked (or legacy string) flavor — no tracking
-  const inv = invItems.find(i => i.id === f.itemId);
-  if (!inv) return null;
-  const srv = f.servingsUsed || 1;
-  const availServings = (inv.currentStock || 0) * (inv.servingsPerUnit || 1);
-  const standaloneInCart = Object.values(cartFlavors).flat().filter(x => x === f.name).length;
-  const inCombosInCart = Object.values(cartComboFlavors).flat().filter(cf => cf && cf.flavor === f.name).length;
-  return Math.max(0, Math.floor(availServings / srv) - standaloneInCart - inCombosInCart);
-}
-
-// The combo may bundle one or more flavored items (e.g. a drink) — this
-// returns one "slot" per unit of each such included item, in comboItems
-// order, so the customize modal can prompt for a flavor per unit.
-function getComboFlavorSlots(mi) {
-  const slots = [];
-  (mi.comboItems || []).forEach(c => {
-    const inclMi = menuItems.find(m => m.id === c.menuItemId);
-    if (!inclMi || !itemHasFlavors(inclMi)) return;
-    const qty = c.qty || 1;
-    for (let i = 0; i < qty; i++) {
-      slots.push({ menuItemId: c.menuItemId, name: inclMi.name, flavors: inclMi.flavors });
-    }
+function reopenOrder(firebaseKey){
+  if (!confirm('Reopen this order?')) return;
+  db.ref('orders/'+firebaseKey).update({
+    status: 'open',
+    completedAt: null
+  }).then(() => {
+    closePreviousOrders();
+  }).catch(e => {
+    alert('Could not reopen order. Check connection.');
   });
-  return slots;
 }
 
-function openFlavorPicker(id) {
-  const mi = menuItems.find(m=>m.id===id);
-  if (!mi) return;
-  pendingFlavorItemId = id;
-  document.getElementById('flavor-modal-title').textContent = esc(mi.name);
-  const grid = document.getElementById('flavor-options-grid');
-  grid.innerHTML = (mi.flavors || []).map(f => {
-    const isObj = typeof f === 'object';
-    const name = isObj ? f.name : f;
-    const price = effectiveFlavorPrice(mi, name);
-    const priceLabel = price > 0 ? `<span style="display:block;font-size:11px;font-weight:700;opacity:.9">$${price.toFixed(2)}</span>` : '';
-    const remaining = isObj ? flavorStockRemaining(f) : null;
-    const out = remaining !== null && remaining <= 0;
-    const stockLabel = remaining !== null
-      ? `<span style="display:block;font-size:10px;font-weight:600;opacity:.75">${out ? 'Out of stock' : remaining + ' left'}</span>`
-      : '';
-    return `<button class="mod-option-btn" data-flavor="${esc(name)}" ${out?'disabled':''} onclick="pickFlavor(this)">${esc(name)}${priceLabel}${stockLabel}</button>`;
-  }).join('');
-  document.getElementById('flavor-modal').classList.add('visible');
-}
-
-function pickFlavor(btn) {
-  const id = pendingFlavorItemId;
-  if (!id || btn.disabled) return;
-  const flavor = btn.dataset.flavor;
-  if (!cartFlavors[id]) cartFlavors[id] = [];
-  cartFlavors[id].push(flavor);
-  cart[id] = (cart[id]||0) + 1;
-  closeFlavorModal();
-  renderMenuGrid();
-  renderCartPanel();
-  updateCartBadge();
-}
-
-function closeFlavorModal() {
-  pendingFlavorItemId = null;
-  document.getElementById('flavor-modal').classList.remove('visible');
-}
-
-// ── Cart ──────────────────────────────────────────────────
-function renderCartPanel(){
-  const el = document.getElementById('cart-items');
-  const totalEl = document.getElementById('cart-total');
-  const placeBtn = document.getElementById('place-btn');
-  const entries = Object.entries(cart);
-
-  if (!entries.length){
-    el.innerHTML = '<div class="cart-empty">No items yet.<br>Select from the menu.</div>';
-    document.getElementById('cart-subtotal').textContent = '$0.00';
-    document.getElementById('cart-tax').textContent = '$0.00';
-    totalEl.textContent = '$0.00';
-    placeBtn.disabled = true;
-    return;
-  }
-
-  const TAX_RATE = 0.10;
-  let subtotal = 0;
-  el.innerHTML = entries.map(([id,qty]) => {
-    const mi = menuItems.find(m=>m.id===id);
-    if (!mi) return '';
-    const mod = cartMods[id];
-    const addons = cartAddons[id] || [];
-    const addonsTotal = addons.reduce((s,a)=>s+(a.price||0),0);
-    const wantsCombo = !!cartCombo[id];
-    const flavors = cartFlavors[id] || [];
-
-    // Flavored items can each carry their own price, so total the line by
-    // flavor rather than applying one flat unit price to the whole qty.
-    let sub, flavorLine = '';
-    if (flavors.length) {
-      const counts = {};
-      flavors.forEach(f => counts[f] = (counts[f]||0)+1);
-      sub = Object.entries(counts).reduce((s,[f,c]) => s + c*(effectiveFlavorPrice(mi,f)+addonsTotal), 0);
-      flavorLine = `🥤 ${Object.entries(counts).map(([f,c]) =>
-        `${c>1?c+'× ':''}${esc(f)} ($${effectiveFlavorPrice(mi,f).toFixed(2)})`
-      ).join(', ')}`;
-    } else {
-      sub = qty*effectiveUnitPrice(mi, id);
-    }
-    subtotal += sub;
-
-    const comboItems = (wantsCombo && mi.isCombo) ? (mi.comboItems||[]) : [];
-    const comboFlavorPicks = cartComboFlavors[id] || [];
-    const comboLine = comboItems.length
-      ? `🍱 Combo — Includes: ${comboItems.map(c=>{
-          const picks = comboFlavorPicks.filter(f=>f.menuItemId===c.menuItemId).map(f=>f.flavor);
-          return esc(c.name)+(c.qty>1?' ×'+c.qty:'')+(picks.length?' ('+picks.map(esc).join(', ')+')':'');
-        }).join(', ')}`
-      : '';
-    const nameClickFn = itemHasFlavors(mi) ? `openFlavorPicker('${id}')`
-      : itemNeedsCustomization(mi) ? `openCustomizeModal('${id}')` : '';
-    const nameClick = nameClickFn ? ` style="cursor:pointer" onclick="${nameClickFn}"` : '';
-    return `<div class="cart-item" style="flex-wrap:wrap">
-      <span class="cart-item-name"${nameClick}>${esc(mi.name)}</span>
-      <span class="cart-item-qty">× ${qty}</span>
-      <span class="cart-item-sub">${sub>0?'$'+sub.toFixed(2):'—'}</span>
-      ${mod?`<div style="width:100%" class="cart-item-mod">↳ Sub: ${esc(mod)}</div>`:''}
-      ${addons.length?`<div style="width:100%" class="cart-item-addon">↳ + ${addons.map(a=>esc(a.name)+' ($'+(a.price||0).toFixed(2)+')').join(', ')}</div>`:''}
-      ${comboLine?`<div style="width:100%" class="cart-item-combo">↳ ${comboLine}</div>`:''}
-      ${flavorLine?`<div style="width:100%;color:#f472b6" class="cart-item-addon">↳ ${flavorLine}</div>`:''}
-    </div>`;
-  }).join('');
-
-  const tax = subtotal * TAX_RATE;
-  const grandTotal = subtotal + tax;
-  document.getElementById('cart-subtotal').textContent = '$'+subtotal.toFixed(2);
-  document.getElementById('cart-tax').textContent = '$'+tax.toFixed(2);
-  totalEl.textContent = '$'+grandTotal.toFixed(2);
-  placeBtn.disabled = !(entries.length && selectedPayment);
-}
-
-function updateCartBadge(){
-  const count = Object.values(cart).reduce((s,v)=>s+v,0);
-  const pill = document.getElementById('cart-pill');
-  if (count>0){
-    pill.style.display=''; pill.textContent=`🛒 ${count} item${count>1?'s':''}`;
+// ── Header updates ─────────────────────────────────────────
+function updateHeader(){
+  const badge = document.getElementById('order-count');
+  const n = openOrders.length;
+  if (n === 0){
+    badge.textContent = '0 Orders';
+    badge.className = 'order-count-badge empty';
   } else {
-    pill.style.display='none';
+    badge.textContent = n + (n===1?' Order':' Orders');
+    badge.className = 'order-count-badge';
   }
 }
 
-function pickPayment(btn){
-  document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  selectedPayment = btn.dataset.method;
-  renderCartPanel();
+// ── Clock ─────────────────────────────────────────────────
+function updateClock(){
+  const now = new Date();
+  const h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  document.getElementById('kds-clock').textContent = `${h12}:${m} ${ampm}`;
 }
-
-function openCart(){
-  document.getElementById('cart-panel').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function closeCart(){
-  document.getElementById('cart-panel').classList.remove('open');
-  document.body.style.overflow='';
-}
-
-// ── Place Order ───────────────────────────────────────────
-async function placeOrder(){
-  if (!Object.keys(cart).length){ showToast('Add items first.','error'); return; }
-  if (!selectedPayment){ showToast('Select a payment method.','error'); return; }
-
-  const btn = document.getElementById('place-btn');
-  btn.disabled = true;
-  btn.textContent = 'Placing order…';
-
-  try {
-    // Atomic order number
-    const result = await db.ref('orderCounter').transaction(n => (n||0)+1);
-    const orderNum = result.snapshot.val();
-    const now = new Date().toISOString();
-    const note = document.getElementById('order-note').value.trim();
-    const customerName = document.getElementById('order-name').value.trim();
-    const TAX_RATE = 0.10;
-    let subtotal = 0;
-
-    const items = [];
-    Object.entries(cart).forEach(([id,qty]) => {
-      const mi = menuItems.find(m=>m.id===id);
-      const mod = cartMods[id] || null;
-      const addOns = cartAddons[id] || [];
-      const addOnsTotal = addOns.reduce((s,a)=>s+(a.price||0),0);
-      const wantsCombo = !!cartCombo[id];
-      const unitPrice = effectiveUnitPrice(mi, id);
-      const comboFlavorPicks = cartComboFlavors[id] || [];
-      const comboIncludes = (wantsCombo && mi?.isCombo && mi.comboItems && mi.comboItems.length)
-        ? mi.comboItems.map(c=>{
-            const flavors = comboFlavorPicks.filter(f=>f.menuItemId===c.menuItemId).map(f=>f.flavor);
-            return { menuItemId:c.menuItemId, name:c.name, qty:c.qty||1, ...(flavors.length?{flavors}:{}) };
-          })
-        : null;
-      const baseLine = {
-        menuItemId:id, menuItemName:mi?.name||'?',
-        unitPrice:unitPrice-addOnsTotal,
-        ...(mod?{mod}:{}),
-        ...(addOns.length?{addOns, addOnsTotal}:{}),
-        ...(comboIncludes?{isCombo:true, comboIncludes}:{})
-      };
-
-      const flavors = cartFlavors[id];
-      if (flavors && flavors.length) {
-        // One order line per distinct flavor, grouped by count — each
-        // flavor can carry its own standalone price.
-        const counts = {};
-        flavors.forEach(f => counts[f] = (counts[f]||0)+1);
-        Object.entries(counts).forEach(([flavor, flavorQty]) => {
-          const flavorUnitPrice = effectiveFlavorPrice(mi, flavor) + addOnsTotal;
-          const sub = flavorQty*flavorUnitPrice;
-          subtotal += sub;
-          items.push({ ...baseLine, unitPrice:flavorUnitPrice-addOnsTotal, qty:flavorQty, subtotal:sub, flavor });
-        });
-      } else {
-        const sub = qty*unitPrice;
-        subtotal += sub;
-        items.push({ ...baseLine, qty, subtotal:sub });
-      }
-    });
-
-    const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
-    const ordId = uuid();
-    await db.ref('orders/'+ordId).set({
-      id: ordId, orderNumber: orderNum, items, note, name: customerName,
-      subtotal, tax, total,
-      paymentMethod: selectedPayment, paid: true,
-      status: 'open', createdAt: now, completedAt: null
-    });
-
-    // Deduct inventory stock for any ingredient-linked add-ons, the specific
-    // flavor's linked item, and any combo extras selected on this order
-    await deductOrderStock(items, orderNum, now);
-
-    // Reset
-    cart = {}; cartMods = {}; cartAddons = {}; cartCombo = {}; cartComboFlavors = {}; cartFlavors = {}; selectedPayment = null;
-    document.getElementById('order-name').value = '';
-    document.getElementById('order-note').value = '';
-    document.querySelectorAll('.pay-btn').forEach(b=>b.classList.remove('active'));
-    renderMenuGrid(); renderCartPanel(); updateCartBadge();
-    closeCart();
-    showToast(`✅ Order #${pad(orderNum)} placed!`, 'success', 4000);
-
-  } catch(e){
-    showToast('Error: '+e.message,'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Place Order';
-    // Re-evaluate disabled state
-    setTimeout(() => {
-      const entries = Object.entries(cart);
-      document.getElementById('place-btn').disabled = !(entries.length && selectedPayment);
-    }, 50);
-  }
-}
-
-// Deducts inventory stock for every ingredient-linked add-on, the specific
-// inventory item linked to a sold flavor, plus the ingredients of any
-// combo-included items when a line ordered the combo, and logs a matching
-// "out" transaction for each — same as the recap tool does.
-// (The base menu item's own ingredients are still only deducted through the
-// manual Daily Recap, since the order station doesn't track every raw
-// ingredient the way it now does for add-ons, flavors, and combo extras.)
-async function deductOrderStock(orderItems, orderNum, now) {
-  // Merge servings needed per inventory item across every order line
-  const merged = {}; // { itemId: { name, totalServings } }
-  const addServings = (itemId, name, servings) => {
-    if (!itemId || !(servings > 0)) return;
-    if (!merged[itemId]) merged[itemId] = { name, totalServings: 0 };
-    merged[itemId].totalServings += servings;
-  };
-
-  orderItems.forEach(line => {
-    (line.addOns || []).forEach(a => {
-      addServings(a.itemId, a.name, (a.servingsUsed||0) * line.qty);
-    });
-    if (line.flavor) {
-      const mi = menuItems.find(m => m.id === line.menuItemId);
-      const fl = (mi?.flavors || []).find(f => (typeof f === 'string' ? f : f.name) === line.flavor);
-      if (fl && typeof fl === 'object' && fl.itemId) {
-        addServings(fl.itemId, fl.name, (fl.servingsUsed||1) * line.qty);
-      }
-    }
-    if (line.isCombo && line.comboIncludes) {
-      line.comboIncludes.forEach(c => {
-        const inclMi = menuItems.find(m => m.id === c.menuItemId);
-        if (!inclMi) return;
-        (inclMi.ingredients || []).forEach(ing => {
-          addServings(ing.itemId, ing.itemName, ing.servingsUsed * (c.qty||1) * line.qty);
-        });
-        // Each chosen flavor (one per unit of this included drink) deducts
-        // its own linked inventory item.
-        (c.flavors || []).forEach(flavorName => {
-          const fl = (inclMi.flavors || []).find(f => (typeof f === 'string' ? f : f.name) === flavorName);
-          if (fl && typeof fl === 'object' && fl.itemId) {
-            addServings(fl.itemId, fl.name, (fl.servingsUsed||1) * line.qty);
-          }
-        });
-      });
-    }
-  });
-
-  const ids = Object.keys(merged);
-  if (!ids.length) return;
-
-  const date = now.split('T')[0];
-  await Promise.all(ids.map(async itemId => {
-    const inv = invItems.find(i => i.id === itemId);
-    if (!inv || !inv.servingsPerUnit) return;
-    const { name, totalServings } = merged[itemId];
-    const unitsDeducted = totalServings / inv.servingsPerUnit;
-    if (unitsDeducted <= 0) return;
-
-    // Atomic stock decrement
-    await db.ref('items/'+itemId).transaction(cur => {
-      if (cur === null) return cur;
-      return { ...cur, currentStock: Math.max(0, (cur.currentStock||0) - unitsDeducted) };
-    });
-
-    const txId = uuid();
-    await db.ref('transactions/'+txId).set({
-      id: txId, date,
-      itemId, itemName: inv.name,
-      type: 'out',
-      qty: unitsDeducted, servings: totalServings,
-      unitCost: inv.unitCost || 0,
-      totalCost: unitsDeducted * (inv.unitCost || 0),
-      note: `Order #${pad(orderNum)} — add-on/combo: ${name}`,
-      source: 'order-addon-combo',
-      createdAt: now
-    });
-  }));
-}
-
-// ── History ───────────────────────────────────────────────
-function renderHistory(){
-  const c = document.getElementById('order-history');
-  if (!recentOrders.length){
-    c.innerHTML = '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">No orders yet.</div>';
-    return;
-  }
-  c.innerHTML = recentOrders.slice(0,20).map(o => {
-    const t = new Date(o.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const items = (o.items||[]).map(i=>`${i.qty}× ${i.menuItemName}${i.flavor?' ('+i.flavor+')':''}`).join(', ');
-    const st = o.status||'open';
-    return `<div class="order-row">
-      <span class="order-num-chip">#${pad(o.orderNumber||0)}</span>
-      <span class="status-chip ${st}">${st==='complete'?'✓ Done':'⏳ Open'}</span>
-      <span class="order-row-items">${esc(items)}</span>
-      <span class="order-row-total">$${(o.total||0).toFixed(2)}</span>
-      <span class="order-row-time">${t}</span>
-    </div>`;
-  }).join('');
-}
+updateClock();
+setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
