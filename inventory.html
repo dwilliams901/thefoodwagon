@@ -1292,7 +1292,7 @@ function getStockStatus(item) {
 // ══════════════════════════════════════════════════════
 //  STOCK ADJUSTMENT
 // ══════════════════════════════════════════════════════
-function openStockModal(dir) {
+function openStockModal(dir, presetItemId) {
   stockDirection = dir;
   stockQtyMode = 'units';
   document.getElementById('stock-modal-title').textContent = dir === 'in' ? 'Add Stock (Receiving)' : 'Remove Stock (Usage / Loss)';
@@ -1313,6 +1313,10 @@ function openStockModal(dir) {
   document.getElementById('stock-qty-mode-row').style.display = dir === 'out' ? '' : 'none';
   setStockQtyMode('units');
   populateStockItemSelect();
+  if (presetItemId) {
+    document.getElementById('stock-item-select').value = presetItemId;
+    onStockItemChange();
+  }
   openModal('stock-modal-backdrop');
 }
 
@@ -1803,7 +1807,7 @@ function renderDashboard() {
         return `
           <div class="alert-card ${isCrit?'':'warning'}">
             <div class="alert-card-header">
-              <div class="alert-item-name">${esc(item.name)}</div>
+              <div class="alert-item-name" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted" title="Click to add stock" onclick="openStockModal('in','${item.id}')">${esc(item.name)}</div>
               <div class="alert-badge ${isCrit?'':'warning'}">${isCrit?'OUT':'LOW'}</div>
             </div>
             <div class="alert-stock-row">
