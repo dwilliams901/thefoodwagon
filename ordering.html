@@ -120,7 +120,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* ── MOD PICKER MODAL ── */
 #mod-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;align-items:flex-end;justify-content:center;padding:0}
 #mod-modal.visible{display:flex}
-.mod-modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:480px;padding:24px 20px 32px;border-top:1px solid var(--border-light);box-shadow:0 -6px 30px rgba(0,0,0,.5)}
+.mod-modal-box{background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;width:100%;max-width:480px;padding:24px 20px 0;border-top:1px solid var(--border-light);box-shadow:0 -6px 30px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:88vh}
+.mod-modal-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding-bottom:20px}
+.mod-modal-footer{padding:12px 0 28px;flex-shrink:0}
 .mod-modal-title{font-size:17px;font-weight:800;margin-bottom:4px}
 .mod-modal-note{font-size:13px;color:var(--warning);margin-bottom:16px;line-height:1.4}
 .mod-modal-subheading{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
@@ -235,26 +237,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div class="mod-modal-note" id="mod-modal-note" style="display:none"></div>
 
-    <div id="mod-combo-section" style="display:none">
-      <div class="mod-modal-subheading">Make it a combo?</div>
-      <div class="mod-options-grid" id="mod-combo-grid"></div>
+    <div class="mod-modal-scroll">
+      <div id="mod-combo-section" style="display:none">
+        <div class="mod-modal-subheading">Make it a combo?</div>
+        <div class="mod-options-grid" id="mod-combo-grid"></div>
+      </div>
+
+      <div id="mod-combo-flavor-section" style="display:none">
+        <div id="mod-combo-flavor-groups"></div>
+      </div>
+
+      <div id="mod-sub-section" style="display:none">
+        <div class="mod-modal-subheading">Choose a substitution:</div>
+        <div class="mod-options-grid" id="mod-options-grid"></div>
+      </div>
+
+      <div id="mod-addon-section" style="display:none">
+        <div class="mod-modal-subheading">Add-ons:</div>
+        <div class="mod-options-grid" id="mod-addon-grid"></div>
+      </div>
     </div>
 
-    <div id="mod-combo-flavor-section" style="display:none">
-      <div id="mod-combo-flavor-groups"></div>
+    <div class="mod-modal-footer">
+      <button class="mod-add-btn ready" id="mod-add-btn" onclick="confirmMod()">Add to Order</button>
     </div>
-
-    <div id="mod-sub-section" style="display:none">
-      <div class="mod-modal-subheading">Choose a substitution:</div>
-      <div class="mod-options-grid" id="mod-options-grid"></div>
-    </div>
-
-    <div id="mod-addon-section" style="display:none">
-      <div class="mod-modal-subheading">Add-ons:</div>
-      <div class="mod-options-grid" id="mod-addon-grid"></div>
-    </div>
-
-    <button class="mod-add-btn ready" id="mod-add-btn" onclick="confirmMod()">Add to Order</button>
   </div>
 </div>
 
@@ -265,8 +271,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="mod-modal-title" id="flavor-modal-title">Choose a Flavor</div>
       <button onclick="closeFlavorModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;cursor:pointer;padding:0 2px">×</button>
     </div>
-    <div class="mod-modal-subheading">Flavor:</div>
-    <div class="mod-options-grid" id="flavor-options-grid"></div>
+    <div class="mod-modal-scroll">
+      <div class="mod-modal-subheading">Flavor:</div>
+      <div class="mod-options-grid" id="flavor-options-grid"></div>
+    </div>
   </div>
 </div>
 
