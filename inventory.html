@@ -1720,8 +1720,11 @@ function renderDashboard() {
 
   document.getElementById('dash-total-items').textContent = items.length;
 
-  // Restock
-  const belowThresh = items.filter(i => i.threshold > 0 && (i.currentStock||0) <= i.threshold);
+  // Restock — catches both "below threshold" items and items that are
+  // simply out of stock with no threshold configured at all (getStockStatus
+  // flags those critical too; the old filter here required threshold>0 and
+  // silently dropped any out-of-stock item that had no threshold set).
+  const belowThresh = items.filter(i => getStockStatus(i) !== 'ok');
   document.getElementById('dash-below-threshold').textContent = belowThresh.length;
   const restockCost = belowThresh.reduce((s,i) => s + Math.max(0,(i.threshold||0)-(i.currentStock||0))*(i.unitCost||0), 0);
   document.getElementById('dash-restock-cost').textContent = '$'+restockCost.toFixed(2);
@@ -1793,8 +1796,9 @@ function renderDashboard() {
       .sort((a,b) => (a.currentStock||0) - (b.currentStock||0))
       .map(item => {
         const stock = item.currentStock || 0;
-        const needed = Math.max(0, (item.threshold||0) - stock);
-        const cost = needed * (item.unitCost || 0);
+        const hasThresh = item.threshold > 0;
+        const needed = hasThresh ? Math.max(0, item.threshold - stock) : null;
+        const cost = needed ? needed * (item.unitCost || 0) : 0;
         const isCrit = stock <= 0;
         return `
           <div class="alert-card ${isCrit?'':'warning'}">
@@ -1809,11 +1813,11 @@ function renderDashboard() {
               </div>
               <div class="alert-stock-item">
                 <div class="alert-stock-label">Threshold</div>
-                <div class="alert-stock-val">${item.threshold} <small>${esc(item.unit)}</small></div>
+                <div class="alert-stock-val">${hasThresh?item.threshold+' ':''}${hasThresh?`<small>${esc(item.unit)}</small>`:'<small>Not set</small>'}</div>
               </div>
               <div class="alert-stock-item">
                 <div class="alert-stock-label">Need</div>
-                <div class="alert-stock-val">${needed.toFixed(2)} <small>${esc(item.unit)}</small></div>
+                <div class="alert-stock-val">${needed!==null?needed.toFixed(2)+' ':''}${needed!==null?`<small>${esc(item.unit)}</small>`:'<small>—</small>'}</div>
               </div>
             </div>
             ${cost>0?`<div class="alert-cost">
